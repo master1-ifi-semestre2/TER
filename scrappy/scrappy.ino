@@ -45,8 +45,6 @@ float l3;
 
 /* Etat initial = avancer */
 volatile int currentState = 5;
-/* Mémorise les 2 derniers mouvements pour ne pas avancer et reculer à l'infini */
-volatile int directions[2];
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
@@ -115,10 +113,8 @@ int explore(float cm1,float cm2,float cm3){
   
   if(d2 > robotWidth + safetyDistance) {
     /* Si il y a plus de 40 cm devant lui */
-    if( (h2  > (robotWidth + safetyDistance) ) && (h1 > (robotWidth + safetyDistance) )) { // && !(directions[0] == 0 && directions[1] == 2)
+    if( (h2  > (robotWidth + safetyDistance) ) && (h1 > (robotWidth + safetyDistance) )) {
       /* Si il y a plus de 40 cm de chaque coté du robot */
-      directions[0] = directions[1];
-      directions[1] = 0;
       Serial.print("↑");
       Serial.println();
       return 0;
@@ -126,40 +122,29 @@ int explore(float cm1,float cm2,float cm3){
     else {
       /* Tourner du coté où il y a plus d'espace */
       if(d1 > d3){
-        directions[0] = directions[1];
-        directions[1] = -1;
         Serial.print("← 30°");
         Serial.println();
         return -1;
       }
       else {
-         directions[0] = directions[1];
-         directions[1] = 1;
          Serial.print("➝ 30°");
          Serial.println();
          return 1;
       }
      }
   }
-  else if (d2 > robotWidth){
-      if(d1 > d3){
-        directions[0] = directions[1];
-        directions[1] = -1;
+  else if (d2 > robotWidth && d1 > d3){
         Serial.print("← 30°");
         Serial.println();
         return -1;
-      }
   }
   else {
       /* Faire marche arrière */
-      directions[0] = directions[1];
-      directions[1] = 2;
       Serial.print("↓");
       Serial.println();
       return 2;
-  }
-  } 
-}
+    }
+ } 
 
 void navigate()
 {
