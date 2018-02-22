@@ -1,12 +1,11 @@
 /****************************************************************************
    Sonar Robot
 
-
    Authors:  
-      - YACOUB Camille
-       -BALDE Thierno Mamadou Cellou
-       -DIALLO Mahmoud
-       -MOULAYEELY Bezeid
+      - WILHELM Andreina
+      - BENSOUSSAN Chloé
+      - GRÉAU Alexandre
+      - Grâce
        
    Permissions: MIT licence
    
@@ -45,7 +44,9 @@ float l2;
 float l3;
 
 /* Etat initial = avancer */
-volatile int currentState=0;
+volatile int currentState = 5;
+/* Mémorise les 2 derniers mouvements pour ne pas avancer et reculer à l'infini */
+volatile int directions[2];
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
@@ -58,7 +59,6 @@ Adafruit_DCMotor *motorRight = AFMS.getMotor(1);
 Adafruit_DCMotor *motorLeft = AFMS.getMotor(2);
 
 float calculDistance(uint8_t trigPin,uint8_t echoPin){
-    
   uint32_t duration; // duration of the round trip
   float cm;  // distance of the obstacle
   
@@ -88,18 +88,18 @@ float calculDistance(uint8_t trigPin,uint8_t echoPin){
 
 int explore(float cm1,float cm2,float cm3){
      
-  Serial.print("Capteur 1 : ");                               
+  /*Serial.print("Capteur gauche : ");                               
   Serial.print(cm1);
-  Serial.print(" centimeters");
+  Serial.print(" cm");
   Serial.println();
-  Serial.print("Capteur 2 : ");      
+  Serial.print("Capteur milieu : ");      
   Serial.print(cm2);
-  Serial.print(" centimeters");
+  Serial.print(" cm");
   Serial.println();
-  Serial.print("Capteur 3 : ");      
+  Serial.print("Capteur droite : ");      
   Serial.print(cm3);
-  Serial.print(" centimeters");
-  Serial.println();
+  Serial.print(" cm");
+  Serial.println();*/
   
   d1=cm1;
   d2=cm2;
@@ -115,31 +115,49 @@ int explore(float cm1,float cm2,float cm3){
   
   if(d2 > robotWidth + safetyDistance) {
     /* Si il y a plus de 40 cm devant lui */
-    if( (h2  > (robotWidth + safetyDistance) ) && (h1 > (robotWidth + safetyDistance) )) {
+    if( (h2  > (robotWidth + safetyDistance) ) && (h1 > (robotWidth + safetyDistance) )) { // && !(directions[0] == 0 && directions[1] == 2)
       /* Si il y a plus de 40 cm de chaque coté du robot */
-      Serial.print("Move forward One cycle");
+      directions[0] = directions[1];
+      directions[1] = 0;
+      Serial.print("↑");
       Serial.println();
       return 0;
     }
     else {
       /* Tourner du coté où il y a plus d'espace */
       if(d1 > d3){
-        Serial.print("Turn left 30 degree");
+        directions[0] = directions[1];
+        directions[1] = -1;
+        Serial.print("← 30°");
         Serial.println();
         return -1;
       }
       else {
-         Serial.print("Turn right 30 degree");
+         directions[0] = directions[1];
+         directions[1] = 1;
+         Serial.print("➝ 30°");
          Serial.println();
          return 1;
       }
      }
   }
-  else{
-    /* Faire marche arrière */
-    Serial.print("Move backward One cycle");
-    Serial.println();
-    return 2;
+  else if (d2 > robotWidth){
+      if(d1 > d3){
+        directions[0] = directions[1];
+        directions[1] = -1;
+        Serial.print("← 30°");
+        Serial.println();
+        return -1;
+      }
+  }
+  else {
+      /* Faire marche arrière */
+      directions[0] = directions[1];
+      directions[1] = 2;
+      Serial.print("↓");
+      Serial.println();
+      return 2;
+  }
   } 
 }
 
@@ -163,33 +181,36 @@ void navigate()
   Serial.println();
   
   if(resultatExplore != currentState){
-    currentState=resultatExplore;
+    currentState = resultatExplore;
     motorRight->run(RELEASE);
     motorLeft->run(RELEASE);
   
     if(resultatExplore == 0){ 
-      /* marche avant -> repart en arrière */  
+      /* marche avant */  
+      motorRight->run(FORWARD);//run(BACKWARD);
+      motorLeft->run(FORWARD);
+    }
+    else if(resultatExplore == 2){
+      /* marche arrière */ 
       motorRight->run(BACKWARD);
       motorLeft->run(BACKWARD);
     }
-    else if(resultatExplore == 2){
-      /* marche arrière -> repart devant lui */ 
-      motorRight->run(FORWARD);
-      motorLeft->run(FORWARD);
-    }
     else if(resultatExplore == -1){ 
       /* tourner à gauche */
-      motorRight->run(FORWARD);
+      motorRight->run(BACKWARD);
+      motorLeft->run(FORWARD);
     }
     else if(resultatExplore == 1){
       /* tourner à droite */
-      motorLeft->run(FORWARD);
+      motorRight->run(FORWARD);
+      motorLeft->run(BACKWARD);
     }
   }
 }
 
  
 void setup() {
+  
   // initialize serial communication:
   Serial.begin(9600);
   AFMS.begin();  // create with the default frequency 1.6KHz
