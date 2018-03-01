@@ -5,7 +5,7 @@
       - WILHELM Andreina
       - BENSOUSSAN Chloé
       - GRÉAU Alexandre
-      - Grâce
+      - BOUKOU Grâce
        
    Permissions: MIT licence
    
@@ -32,7 +32,7 @@ const uint8_t echoPin3 = 7;
 
 const int r = 22.5 * 1.866; // Distance entre le centre du robot et capteurs
 const float teta = 30;
-const float safetyDistance = 20; // cm
+const float safetyDistance = 20; // cm en fonction de la vitesse
 const float robotWidth = 20; 
 float h1; //espace libre à gauche 
 float h2; // espace libre à droite 
@@ -111,32 +111,32 @@ int explore(float cm1,float cm2,float cm3){
   l2 = (d3 - d1) * 0.866;
   l3 =  (d2 - d3) * 0.866 - 5.63;
   
-  if(d2 > robotWidth + safetyDistance) {
-    /* Si il y a plus de 40 cm devant lui */
-    if( (h2  > (robotWidth + safetyDistance) ) && (h1 > (robotWidth + safetyDistance) )) {
-      /* Si il y a plus de 40 cm de chaque coté du robot */
+  if((d2 > robotWidth + safetyDistance)
+    && (h2 > (robotWidth + safetyDistance)) 
+    && (h1 > (robotWidth + safetyDistance))) {
+    /* Si il y a plus de 40 cm devant lui et de chaque coté */
       Serial.print("↑");
       Serial.println();
       return 0;
-    }
-    else {
-      /* Tourner du coté où il y a plus d'espace */
+  }
+  else if (d2 > robotWidth){
+    /* Si il ne peut plus avancer et reste de l'espace entre les 2, choisir le côté où il y a le plus d'espace */
       if(d1 > d3){
-        Serial.print("← 30°");
+        Serial.print("← 30°, gauche = ");
+        Serial.print(d1);
+        Serial.print("  droite = ");
+        Serial.print(d3);
         Serial.println();
         return -1;
       }
       else {
-         Serial.print("➝ 30°");
+         Serial.print("➝ 30°, gauche = ");
+        Serial.print(d1);
+        Serial.print("  droite = ");
+        Serial.print(d3);
          Serial.println();
          return 1;
       }
-     }
-  }
-  else if (d2 > robotWidth && d1 > d3){
-        Serial.print("← 30°");
-        Serial.println();
-        return -1;
   }
   else {
       /* Faire marche arrière */
@@ -202,13 +202,13 @@ void setup() {
   //AFMS.begin(1000);  // OR with a different frequency, say 1KHz
  
   // Set the speed to start, from 0 (off) to 255 (max speed)
-  motorRight->setSpeed(80);
+  motorRight->setSpeed(100);
   motorRight->run(FORWARD);
   // turn on motor
   motorRight->run(RELEASE);
   
   //demarre le moteur numero 2
-  motorLeft->setSpeed(80);
+  motorLeft->setSpeed(100);
   motorLeft->run(FORWARD);
   // turn on motor
   motorLeft->run(RELEASE);
