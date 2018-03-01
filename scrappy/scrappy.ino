@@ -18,30 +18,38 @@
 #include <TimerOne.h>
 
 /*
-  Gauche : capteur 1
-  Milieu : capteur 2
-  Droite : capteur 3
+  Devant gauche : capteur 1
+  Gauche : capteur 2
+  devant droit : capteur 3
   */
 
-const uint8_t trigPin1 = 3; //envoie de signal
-const uint8_t echoPin1 = 2; //reçoit le signal
-const uint8_t trigPin2 = 5;
-const uint8_t echoPin2 = 4;
-const uint8_t trigPin3 = 6;
-const uint8_t echoPin3 = 7;
+const uint8_t trigPin_forward_left = 3; //envoie de signal
+const uint8_t echoPin_forward_left = 2; //reçoit le signal
+
+const uint8_t trigPin_left = 4;
+const uint8_t echoPin_left = 5;
+
+const uint8_t trigPin_forward_right = 6;
+const uint8_t echoPin_forward_right = 7;
+
+const uint8_t trigPin_right = 9;
+const uint8_t echoPin_right = 8;
 
 const int r = 22.5 * 1.866; // Distance entre le centre du robot et capteurs
 const float teta = 30;
 const float safetyDistance = 20; // cm en fonction de la vitesse
-const float robotWidth = 20; 
+const float robotWidth = 20; // Hauteur 12 cm
 float h1; //espace libre à gauche 
 float h2; // espace libre à droite 
 float d1; // distances obstacles/capteurs
 float d2;
 float d3;
+float d4;
+float d_right;
 float l1;
 float l2;
 float l3;
+float l_right;
 
 /* Etat initial = avancer */
 volatile int currentState = 5;
@@ -84,81 +92,66 @@ float calculDistance(uint8_t trigPin,uint8_t echoPin){
   return cm;
 }
 
-int explore(float cm1,float cm2,float cm3){
+int explore(float cm_forward_left, float cm_forward_right, float cm_left, float cm_right){
      
   /*Serial.print("Capteur gauche : ");                               
-  Serial.print(cm1);
+  Serial.print(cm_forward_left);
   Serial.print(" cm");
   Serial.println();
   Serial.print("Capteur milieu : ");      
-  Serial.print(cm2);
+  Serial.print(cm_left);
   Serial.print(" cm");
   Serial.println();
   Serial.print("Capteur droite : ");      
-  Serial.print(cm3);
+  Serial.print(cm_forward_right);
   Serial.print(" cm");
   Serial.println();*/
   
-  d1=cm1;
-  d2=cm2;
-  d3=cm3;
+  d1=cm_forward_left;
+  d2=cm_left;
+  d3=cm_forward_right;
+  d4=cm_right;
   
-  //demi distance des capteurs 1 & 3 + 21cm
-  h1 = d1 / 2 + 21;
-  h2 = d3 / 2 + 21;
+  //demi distance des capteurs left & right + 21cm
+  h1 = d2 / 2 + 21;
+  h2 = d4 / 2 + 21;
   
   l1 = d1 * 0.866 - 5.63;
+  l3 = d3 * 0.866 - 5.63;
   l2 = (d3 - d1) * 0.866;
-  l3 =  (d2 - d3) * 0.866 - 5.63;
-  
-  if((d2 > robotWidth + safetyDistance)
-    && (h2 > (robotWidth + safetyDistance)) 
-    && (h1 > (robotWidth + safetyDistance))) {
-    /* Si il y a plus de 40 cm devant lui et de chaque coté */
-      Serial.print("↑");
-      Serial.println();
-      return 0;
-  }
-  else if (d2 > robotWidth){
-    /* Si il ne peut plus avancer et reste de l'espace entre les 2, choisir le côté où il y a le plus d'espace */
-      if(d1 > d3){
-        Serial.print("← 30°, gauche = ");
-        Serial.print(d1);
-        Serial.print("  droite = ");
-        Serial.print(d3);
-        Serial.println();
-        return -1;
-      }
-      else {
-         Serial.print("➝ 30°, gauche = ");
-        Serial.print(d1);
-        Serial.print("  droite = ");
-        Serial.print(d3);
-         Serial.println();
-         return 1;
-      }
-  }
-  else {
-      /* Faire marche arrière */
-      Serial.print("↓");
-      Serial.println();
-      return 2;
-    }
+  //l_right ???
+
+  Serial.print("devant gauche = ");
+  Serial.print(cm_forward_left);
+  Serial.print("    devant droite = ");
+  Serial.println(cm_forward_right);
+  Serial.print("    gauche = ");
+  Serial.print(cm_left);
+  Serial.print("    droit = ");
+  Serial.println(cm_right);
+
+   if (cm_forward_left > 20 && cm_forward_right > 20 && cm_left > 20 && cm_right > 20) return 0;
+   if (cm_left < 20) return -1;
+   if (cm_right < 20) return 1;
+   return 2;
  } 
 
 void navigate()
 {
-  float cm1;  // distance of the obstacle
-  float cm2;
-  float cm3;
+  float cm_forward_left;  // distance of the obstacle
+  float cm_forward_right;
+  float cm_left;
+  float cm_right;
+  
   int resultatExplore;
   
    noInterrupts();
-  cm1 = calculDistance(trigPin1,echoPin1);
-  cm2 = calculDistance(trigPin2,echoPin2);
-  cm3 = calculDistance(trigPin3,echoPin3);
+  cm_forward_left = calculDistance(trigPin_forward_left,echoPin_forward_left);
+  cm_forward_right = calculDistance(trigPin_forward_right,echoPin_forward_right);
+  cm_left = calculDistance(trigPin_left, echoPin_left);
+  cm_right = calculDistance(trigPin_right, echoPin_right);
 
-  resultatExplore=explore(cm1,cm2,cm3);
+  resultatExplore=explore(cm_forward_left, cm_forward_right, cm_left, cm_right);
   
    interrupts();
   Serial.print("Explore retourne : ");
@@ -171,22 +164,22 @@ void navigate()
     motorLeft->run(RELEASE);
   
     if(resultatExplore == 0){ 
-      /* marche avant */  
+      // marche avant   
       motorRight->run(FORWARD);//run(BACKWARD);
       motorLeft->run(FORWARD);
     }
     else if(resultatExplore == 2){
-      /* marche arrière */ 
+      // marche arrière 
       motorRight->run(BACKWARD);
       motorLeft->run(BACKWARD);
     }
     else if(resultatExplore == -1){ 
-      /* tourner à gauche */
+      // tourner à gauche 
       motorRight->run(BACKWARD);
       motorLeft->run(FORWARD);
     }
     else if(resultatExplore == 1){
-      /* tourner à droite */
+      // tourner à droite 
       motorRight->run(FORWARD);
       motorLeft->run(BACKWARD);
     }
@@ -202,13 +195,13 @@ void setup() {
   //AFMS.begin(1000);  // OR with a different frequency, say 1KHz
  
   // Set the speed to start, from 0 (off) to 255 (max speed)
-  motorRight->setSpeed(100);
+  motorRight->setSpeed(80);
   motorRight->run(FORWARD);
   // turn on motor
   motorRight->run(RELEASE);
   
   //demarre le moteur numero 2
-  motorLeft->setSpeed(100);
+  motorLeft->setSpeed(80);
   motorLeft->run(FORWARD);
   // turn on motor
   motorLeft->run(RELEASE);
