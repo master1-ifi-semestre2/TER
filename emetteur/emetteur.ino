@@ -21,7 +21,7 @@
 typedef struct{
   int id;
   int valeur;
-} Com;
+}Com;
 
 const uint8_t trigPin_left = 3;
 const uint8_t echoPin_left = 2;
@@ -97,7 +97,7 @@ void loop(){
 
    Com com;
    com.id = 1;
-   com.valeur = 44;
+   com.valeur = 3;
    
    vw_send((byte*) &com, sizeof(com));
    

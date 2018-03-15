@@ -44,7 +44,7 @@ typedef struct {
 Message msg;
 byte msgSize = sizeof(msg);
 
-const uint8_t id = 1;
+const uint8_t myId = 1;
  
 
 /*float h_left; //espace libre à gauche 
