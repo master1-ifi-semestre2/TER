@@ -1,3 +1,4 @@
+
 /****************************************************************************
    Sonar Robot
 
@@ -8,14 +9,13 @@
       - BOUKOU Grâce
        
    Permissions: MIT licence
-   
-   Remarks:
       
 *****************************************************************************/
 #include <Wire.h>
 #include <Adafruit_MotorShield.h>
 #include <Adafruit_PWMServoDriver.h>
 #include <TimerOne.h>
+#include <VirtualWire.h>
 
 const uint8_t trigPin_front_left = 3; //envoie de signal
 const uint8_t echoPin_front_left = 2; //reçoit le signal
@@ -29,13 +29,19 @@ const uint8_t echoPin_front_right = 7;
 const uint8_t trigPin_right = 4;
 const uint8_t echoPin_right = 5;
 
-const int r = 22.5 * 1.866; // Distance entre le centre du robot et capteurs
-const float teta = 30;
+const int receive_pin = 11;
+
+//const int r = 22.5 * 1.866; // Distance entre le centre du robot et capteurs
+//const float teta = 30;
 const float safetyDistance = 20; // cm en fonction de la vitesse
 const float robotWidth = 20; // Hauteur 12 cm
 
-float h_left; //espace libre à gauche 
-float h_right; // espace libre à droite 
+uint8_t msgRecu[8];
+uint8_t longueurMsg = 8; // Taille maximum de notre tableau
+ 
+
+/*float h_left; //espace libre à gauche 
+float h_right; // espace libre à droite */
 
 /*float d_front_left; // distances obstacles/capteurs
 float d_front_right;
@@ -89,42 +95,15 @@ float calculDistance(uint8_t trigPin,uint8_t echoPin){
 }
 
 int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_right){
-     
-  /*Serial.print("Capteur gauche : ");                               
-  Serial.print(cm_front_left);
-  Serial.print(" cm");
-  Serial.println();
-  Serial.print("Capteur milieu : ");      
-  Serial.print(cm_left);
-  Serial.print(" cm");
-  Serial.println();
-  Serial.print("Capteur droite : ");      
-  Serial.print(cm_front_right);
-  Serial.print(" cm");
-  Serial.println();*/
-  
-  /*d_front_left = cm_front_left;
-  d_front_right = cm_front_right;
-  d_left = cm_left;
-  d_right = cm_right;*/
-  
-  //demi distance des capteurs left & right + 21cm
-  h_left = cm_left / 2 + 21;
-  h_right = cm_right / 2 + 21;
-  
-  /*l_front_left = d_front_left * 0.866 - 5.63;
-  l_front_right = d_front_right * 0.866 - 5.63;
-  l_left = (d_front_right - d_front_left) * 0.866;
-  //l_right ???*/
-
-  Serial.print("devant gauche = ");
+    
+  /*Serial.print("devant gauche = ");
   Serial.print(cm_front_left);
   Serial.print("    devant droite = ");
   Serial.println(cm_front_right);
   Serial.print("  gauche = ");
   Serial.print(cm_left);
   Serial.print("  droit = ");
-  Serial.println(cm_right);
+  Serial.println(cm_right);*/
 
    if ((cm_front_right > robotWidth + safetyDistance) 
       && (cm_front_left > robotWidth + safetyDistance) 
@@ -170,10 +149,7 @@ void navigate()
   resultatExplore=explore(cm_front_left, cm_front_right, cm_left, cm_right);
   
    interrupts();
-  Serial.print("Explore retourne : ");
-  Serial.print(resultatExplore);
-  Serial.println();
-
+   
   // S'il tourne, ne pas s'arrêter jusqu'a qu'il trouve de la place devant
   if ((currentState == 1 || currentState == -1) && (resultatExplore == 1 || resultatExplore == -1)){
     resultatExplore = currentState;
@@ -186,7 +162,7 @@ void navigate()
   
     if(resultatExplore == 0){ 
       // marche avant   
-      motorRight->run(FORWARD);//run(BACKWARD);
+      motorRight->run(FORWARD);
       motorLeft->run(FORWARD);
     }
     else if(resultatExplore == 2){
@@ -204,7 +180,7 @@ void navigate()
       motorRight->run(FORWARD);
       motorLeft->run(BACKWARD);
     }
-  }
+  } 
 }
 
  
@@ -214,26 +190,44 @@ void setup() {
   Serial.begin(9600);
   AFMS.begin();  // create with the default frequency 1.6KHz
   //AFMS.begin(1000);  // OR with a different frequency, say 1KHz
+  
+  /*Set up du recepteur*/
+  vw_set_rx_pin(receive_pin);
+  vw_setup(2000); // initialisation de la librairie VirtualWire à 2000 bauds
+  vw_rx_start();  // Activation de la partie réception de la librairie VirtualWire
+
+  
  
   // Set the speed to start, from 0 (off) to 255 (max speed)
-  motorRight->setSpeed(80);
+  motorRight->setSpeed(0);
   motorRight->run(FORWARD);
   // turn on motor
   motorRight->run(RELEASE);
   
   //demarre le moteur numero 2
-  motorLeft->setSpeed(80);
+  motorLeft->setSpeed(0);
   motorLeft->run(FORWARD);
   // turn on motor
   motorLeft->run(RELEASE);
   //a completer avec temps correspondant en milliseconde voir la frequ a donner 
   //PIN 10 ET 9 inutilisable
-  Timer1.initialize(1000000);  
+  //Timer1.initialize(1000000);  
   //attacher la methode calcul de distance , a noter periode non obligatoire.
-  Timer1.attachInterrupt(navigate);
- 
+  //Timer1.attachInterrupt(navigate);
 }
  
 void loop(){
 
+  vw_wait_rx();
+  if(vw_get_message(msgRecu, &longueurMsg)){
+    Serial.print("On recoit : ");
+    for (byte i = 0; i < longueurMsg; i++){
+      // Si il n'est pas corrompu on l'affiche via Serial
+      Serial.print(char(msgRecu[i]));
+      Serial.println("");
+    }
+    
+  }
+ 
+ 
 }
