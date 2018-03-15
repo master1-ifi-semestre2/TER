@@ -36,8 +36,15 @@ const int receive_pin = 11;
 const float safetyDistance = 20; // cm en fonction de la vitesse
 const float robotWidth = 20; // Hauteur 12 cm
 
-uint8_t msgRecu[8];
-uint8_t longueurMsg = 8; // Taille maximum de notre tableau
+typedef struct {
+  int id;
+  int value;
+} Message;
+
+Message msg;
+byte msgSize = sizeof(msg);
+
+const uint8_t id = 1;
  
 
 /*float h_left; //espace libre à gauche 
@@ -215,19 +222,22 @@ void setup() {
   //attacher la methode calcul de distance , a noter periode non obligatoire.
   //Timer1.attachInterrupt(navigate);
 }
- 
-void loop(){
 
-  vw_wait_rx();
-  if(vw_get_message(msgRecu, &longueurMsg)){
-    Serial.print("On recoit : ");
-    for (byte i = 0; i < longueurMsg; i++){
-      // Si il n'est pas corrompu on l'affiche via Serial
-      Serial.print(char(msgRecu[i]));
-      Serial.println("");
+
+
+
+
+
+void loop()
+{
+    if (vw_get_message((byte *) &msg, &msgSize)) // Non-blocking
+    {
+      //Serial.print("Got:  ");
+      Serial.print("Id: ");
+      Serial.print(msg.id);
+      Serial.print("  Value: ");
+      Serial.print(msg.value); 
+      Serial.println(); 
+      delay(100);
     }
-    
-  }
- 
- 
 }
