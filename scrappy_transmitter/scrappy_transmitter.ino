@@ -17,6 +17,16 @@
 #include <TimerOne.h>
 #include <VirtualWire.h>
 
+typedef struct {
+  int id;
+  int value;
+} Message;
+
+Message message;
+byte messageSize = sizeof(message);
+
+const uint8_t myId = 0; // boss
+
 const uint8_t trigPin_front_left = 3; //envoie de signal
 const uint8_t echoPin_front_left = 2; //reçoit le signal
 
@@ -29,39 +39,16 @@ const uint8_t echoPin_front_right = 7;
 const uint8_t trigPin_right = 4;
 const uint8_t echoPin_right = 5;
 
-const int receive_pin = 11;
+const int transmit_pin = 12;
 
 //const int r = 22.5 * 1.866; // Distance entre le centre du robot et capteurs
 //const float teta = 30;
 const float safetyDistance = 20; // cm en fonction de la vitesse
 const float robotWidth = 20; // Hauteur 12 cm
 
-typedef struct {
-  int id;
-  int value;
-} Message;
-
-Message msg;
-byte msgSize = sizeof(msg);
-
-const uint8_t myId = 1;
- 
-
-/*float h_left; //espace libre à gauche 
-float h_right; // espace libre à droite */
-
-/*float d_front_left; // distances obstacles/capteurs
-float d_front_right;
-float d_left;
-float d_right;*/
-
-/*float l_front_left;
-float l_front_right;
-float l_left;
-float l_right;*/
-
-/* Etat initial = avancer */
+/* Etat initial quelconque */
 volatile int currentState = 5;
+
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
@@ -103,14 +90,14 @@ float calculDistance(uint8_t trigPin,uint8_t echoPin){
 
 int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_right){
     
-  /*Serial.print("devant gauche = ");
-  Serial.print(cm_front_left);
-  Serial.print("    devant droite = ");
-  Serial.println(cm_front_right);
-  Serial.print("  gauche = ");
+  Serial.print("G = ");
   Serial.print(cm_left);
-  Serial.print("  droit = ");
-  Serial.println(cm_right);*/
+  Serial.print("  F = ");
+  Serial.print(cm_front_left);
+  Serial.print(" - ");
+  Serial.print(cm_front_right);
+  Serial.print("  D = ");
+  Serial.println(cm_right);
 
    if ((cm_front_right > robotWidth + safetyDistance) 
       && (cm_front_left > robotWidth + safetyDistance) 
@@ -140,14 +127,14 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_r
 
 void navigate()
 {
- /* float cm_front_left;  // distance of the obstacle
+  float cm_front_left;  // distance of the obstacle
   float cm_front_right;
   float cm_left;
   float cm_right;
   
   int resultatExplore;
   
-   noInterrupts();
+  noInterrupts();
   cm_front_left = calculDistance(trigPin_front_left,echoPin_front_left);
   cm_front_right = calculDistance(trigPin_front_right,echoPin_front_right);
   cm_left = calculDistance(trigPin_left, echoPin_left);
@@ -155,56 +142,86 @@ void navigate()
 
   resultatExplore=explore(cm_front_left, cm_front_right, cm_left, cm_right);
   
-   interrupts();*/
+  interrupts();
    
   // S'il tourne, ne pas s'arrêter jusqu'a qu'il trouve de la place devant
   if ((currentState == 1 || currentState == -1) && (resultatExplore == 1 || resultatExplore == -1)){
     resultatExplore = currentState;
   }
-  
-  if(resultatExplore != currentState){
+   if(resultatExplore != currentState){
     currentState = resultatExplore;
     motorRight->run(RELEASE);
     motorLeft->run(RELEASE);
   
     if(resultatExplore == 0){ 
-      // marche avant   
+      // marche avant  
+
+       Serial.println("Marche avant");
       motorRight->run(FORWARD);
       motorLeft->run(FORWARD);
+
+      //interrupts();
+      message.value = 0;
+      Serial.println("hello");
+      vw_send((byte*) &message, sizeof(message));
+      vw_wait_tx(); // On attend la fin de l'envoi
+      Serial.println("Message send !");
+
+      //noInterrupts();
+      //delay(100);
     }
     else if(resultatExplore == 2){
       // marche arrière 
+      Serial.println("Marche arriere");
       motorRight->run(BACKWARD);
       motorLeft->run(BACKWARD);
+
+      message.value = 2;
+      vw_send((byte*) &message, sizeof(message));
+      vw_wait_tx(); // On attend la fin de l'envoi
+      Serial.println("Message send !");
+      delay(100);
     }
     else if(resultatExplore == -1){ 
-      // tourner à gauche 
+      // tourner à gauche
+      Serial.println("gauche"); 
       motorRight->run(BACKWARD);
       motorLeft->run(FORWARD);
+
+      message.value = -1;
+      vw_send((byte*) &message, sizeof(message));
+      vw_wait_tx(); // On attend la fin de l'envoi
+      Serial.println("Message send !");
+      delay(100);
     }
     else if(resultatExplore == 1){
       // tourner à droite 
+      Serial.println("droite");
       motorRight->run(FORWARD);
       motorLeft->run(BACKWARD);
+
+      message.value = 1;
+      vw_send((byte*) &message, sizeof(message));
+      vw_wait_tx(); // On attend la fin de l'envoi
+      Serial.println("Message send !");
+      delay(100);
     }
   } 
 }
 
  
 void setup() {
-  
-  // initialize serial communication:
+ 
   Serial.begin(9600);
   AFMS.begin();  // create with the default frequency 1.6KHz
-  //AFMS.begin(1000);  // OR with a different frequency, say 1KHz
   
-  /*Set up du recepteur*/
-  vw_set_rx_pin(receive_pin);
-  vw_setup(2000); // initialisation de la librairie VirtualWire à 2000 bauds
-  vw_rx_start();  // Activation de la partie réception de la librairie VirtualWire
+  /* Set up de l'émetteur */
+  vw_set_tx_pin(transmit_pin);
+  vw_setup(2000);
 
-  
- 
+  message.id = myId;
+  message.value = 5;
+
   // Set the speed to start, from 0 (off) to 255 (max speed)
   motorRight->setSpeed(0);
   motorRight->run(FORWARD);
@@ -216,28 +233,12 @@ void setup() {
   motorLeft->run(FORWARD);
   // turn on motor
   motorLeft->run(RELEASE);
-  //a completer avec temps correspondant en milliseconde voir la frequ a donner 
-  //PIN 10 ET 9 inutilisable
-  //Timer1.initialize(1000000);  
-  //attacher la methode calcul de distance , a noter periode non obligatoire.
-  //Timer1.attachInterrupt(navigate);
+  
+  Timer1.initialize(1000000);
+  Timer1.attachInterrupt(navigate);
 }
-
-
-
-
 
 
 void loop()
 {
-    if (vw_get_message((byte *) &msg, &msgSize)) // Non-blocking
-    {
-      //Serial.print("Got:  ");
-      Serial.print("Id: ");
-      Serial.print(msg.id);
-      Serial.print("  Value: ");
-      Serial.print(msg.value); 
-      Serial.println(); 
-      delay(100);
-    }
 }
