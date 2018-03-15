@@ -140,7 +140,7 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_r
 
 void navigate()
 {
-  float cm_front_left;  // distance of the obstacle
+ /* float cm_front_left;  // distance of the obstacle
   float cm_front_right;
   float cm_left;
   float cm_right;
@@ -155,7 +155,7 @@ void navigate()
 
   resultatExplore=explore(cm_front_left, cm_front_right, cm_left, cm_right);
   
-   interrupts();
+   interrupts();*/
    
   // S'il tourne, ne pas s'arrêter jusqu'a qu'il trouve de la place devant
   if ((currentState == 1 || currentState == -1) && (resultatExplore == 1 || resultatExplore == -1)){
