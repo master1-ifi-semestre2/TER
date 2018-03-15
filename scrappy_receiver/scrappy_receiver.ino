@@ -17,6 +17,8 @@
 #include <TimerOne.h>
 #include <VirtualWire.h>
 
+bool formationMode = true;
+
 const uint8_t trigPin_front_left = 3; //envoie de signal
 const uint8_t echoPin_front_left = 2; //reçoit le signal
 
@@ -140,23 +142,29 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_r
 
 void navigate()
 {
- /* float cm_front_left;  // distance of the obstacle
-  float cm_front_right;
-  float cm_left;
-  float cm_right;
-  
   int resultatExplore;
   
-   noInterrupts();
-  cm_front_left = calculDistance(trigPin_front_left,echoPin_front_left);
-  cm_front_right = calculDistance(trigPin_front_right,echoPin_front_right);
-  cm_left = calculDistance(trigPin_left, echoPin_left);
-  cm_right = calculDistance(trigPin_right, echoPin_right);
-
-  resultatExplore=explore(cm_front_left, cm_front_right, cm_left, cm_right);
+  if(formationMode) 
+  {
+    if (msg.id != myId) { // for when it has both a emitter and receiver
+      resultatExplore = msg.value;
+    }
+  } else {
+    float cm_front_left;  // distance of the obstacle
+    float cm_front_right;
+    float cm_left;
+    float cm_right;   
+    
+    //noInterrupts();
+    cm_front_left = calculDistance(trigPin_front_left,echoPin_front_left);
+    cm_front_right = calculDistance(trigPin_front_right,echoPin_front_right);
+    cm_left = calculDistance(trigPin_left, echoPin_left);
+    cm_right = calculDistance(trigPin_right, echoPin_right);
   
-   interrupts();*/
-   
+    resultatExplore=explore(cm_front_left, cm_front_right, cm_left, cm_right);
+    //interrupts();
+  }
+      
   // S'il tourne, ne pas s'arrêter jusqu'a qu'il trouve de la place devant
   if ((currentState == 1 || currentState == -1) && (resultatExplore == 1 || resultatExplore == -1)){
     resultatExplore = currentState;
@@ -171,21 +179,25 @@ void navigate()
       // marche avant   
       motorRight->run(FORWARD);
       motorLeft->run(FORWARD);
+      Serial.println("forward");
     }
     else if(resultatExplore == 2){
       // marche arrière 
       motorRight->run(BACKWARD);
       motorLeft->run(BACKWARD);
+      Serial.println("backward");
     }
     else if(resultatExplore == -1){ 
       // tourner à gauche 
       motorRight->run(BACKWARD);
       motorLeft->run(FORWARD);
+      Serial.println("left");
     }
     else if(resultatExplore == 1){
       // tourner à droite 
       motorRight->run(FORWARD);
       motorLeft->run(BACKWARD);
+      Serial.println("right");
     }
   } 
 }
@@ -217,7 +229,6 @@ void setup() {
   // turn on motor
   motorLeft->run(RELEASE);
   //a completer avec temps correspondant en milliseconde voir la frequ a donner 
-  //PIN 10 ET 9 inutilisable
   //Timer1.initialize(1000000);  
   //attacher la methode calcul de distance , a noter periode non obligatoire.
   //Timer1.attachInterrupt(navigate);
@@ -230,14 +241,14 @@ void setup() {
 
 void loop()
 {
-    if (vw_get_message((byte *) &msg, &msgSize)) // Non-blocking
+    if (vw_get_message((byte *) &msg, &msgSize) && formationMode) // Non-blocking
     {
-      //Serial.print("Got:  ");
       Serial.print("Id: ");
       Serial.print(msg.id);
       Serial.print("  Value: ");
       Serial.print(msg.value); 
       Serial.println(); 
-      delay(100);
     }
+
+    navigate();
 }
