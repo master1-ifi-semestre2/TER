@@ -99,7 +99,7 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_r
   Serial.print("  D = ");
   Serial.println(cm_right);
 
-   if ((cm_front_right > robotWidth + safetyDistance) 
+     if ((cm_front_right > robotWidth + safetyDistance) 
       && (cm_front_left > robotWidth + safetyDistance) 
       && (cm_left > robotWidth) 
       && (cm_right > robotWidth)) {
@@ -156,19 +156,16 @@ void navigate()
     if(resultatExplore == 0){ 
       // marche avant  
 
-       Serial.println("Marche avant");
+      Serial.println("Marche avant");
       motorRight->run(FORWARD);
       motorLeft->run(FORWARD);
 
-      //interrupts();
       message.value = 0;
-      Serial.println("hello");
-      vw_send((byte*) &message, sizeof(message));
+      /*vw_send((byte*) &message, sizeof(message));
       vw_wait_tx(); // On attend la fin de l'envoi
       Serial.println("Message send !");
-
-      //noInterrupts();
-      //delay(100);
+      delay(100);*/
+      
     }
     else if(resultatExplore == 2){
       // marche arrière 
@@ -177,10 +174,10 @@ void navigate()
       motorLeft->run(BACKWARD);
 
       message.value = 2;
-      vw_send((byte*) &message, sizeof(message));
+      /*vw_send((byte*) &message, sizeof(message));
       vw_wait_tx(); // On attend la fin de l'envoi
       Serial.println("Message send !");
-      delay(100);
+      delay(100);*/
     }
     else if(resultatExplore == -1){ 
       // tourner à gauche
@@ -189,10 +186,10 @@ void navigate()
       motorLeft->run(FORWARD);
 
       message.value = -1;
-      vw_send((byte*) &message, sizeof(message));
+      /*vw_send((byte*) &message, sizeof(message));
       vw_wait_tx(); // On attend la fin de l'envoi
       Serial.println("Message send !");
-      delay(100);
+      delay(100);*/
     }
     else if(resultatExplore == 1){
       // tourner à droite 
@@ -201,10 +198,10 @@ void navigate()
       motorLeft->run(BACKWARD);
 
       message.value = 1;
-      vw_send((byte*) &message, sizeof(message));
+      /*vw_send((byte*) &message, sizeof(message));
       vw_wait_tx(); // On attend la fin de l'envoi
       Serial.println("Message send !");
-      delay(100);
+      delay(100);*/
     }
   } 
 }
@@ -220,25 +217,30 @@ void setup() {
   vw_setup(2000);
 
   message.id = myId;
-  message.value = 5;
+  message.value = 0;
 
   // Set the speed to start, from 0 (off) to 255 (max speed)
-  motorRight->setSpeed(0);
+  motorRight->setSpeed(80);
   motorRight->run(FORWARD);
   // turn on motor
   motorRight->run(RELEASE);
   
   //demarre le moteur numero 2
-  motorLeft->setSpeed(0);
+  motorLeft->setSpeed(80);
   motorLeft->run(FORWARD);
   // turn on motor
   motorLeft->run(RELEASE);
   
-  Timer1.initialize(1000000);
-  Timer1.attachInterrupt(navigate);
+  /*Timer1.initialize(1000000);
+  Timer1.attachInterrupt(navigate);*/
 }
 
 
 void loop()
 {
+  navigate();
+  vw_send((byte*) &message, sizeof(message));
+  vw_wait_tx(); // On attend la fin de l'envoi
+  Serial.println("Message send !");
+  delay(1000);
 }
