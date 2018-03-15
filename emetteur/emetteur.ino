@@ -18,6 +18,11 @@
 #include <TimerOne.h>
 #include <VirtualWire.h>
 
+typedef struct{
+  int id;
+  int valeur;
+} Com;
+
 const uint8_t trigPin_left = 3;
 const uint8_t echoPin_left = 2;
 
@@ -86,10 +91,17 @@ void loop(){
 
   Serial.println("");
   Serial.println("");*/
-   const char msg[8] = "hello !"; // Tableau qui contient notre message
+
+   //le message ne doit pas dépasser 10 caractères
+   //const char msg[VW_MAX_MESSAGE_LEN] = "Hello world";
+
+   Com com;
+   com.id = 1;
+   com.valeur = 44;
    
+   vw_send((byte*) &com, sizeof(com));
    
-    vw_send((uint8_t *)msg, strlen(msg)+1); // On envoie le message 
+    //vw_send((uint8_t *)msg, strlen(msg)); // On envoie le message 
     vw_wait_tx(); // On attend la fin de l'envoi
     Serial.println("Message send !"); // On signal la fin de l'envoi
     delay(100); // Et on attend 1s pour éviter que deux messages se superpose
