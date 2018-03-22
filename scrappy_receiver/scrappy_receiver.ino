@@ -33,8 +33,8 @@ const uint8_t echoPin_right = 5;
 
 /* Communication */
 const int receive_pin = 11;
-const uint8_t myId = 1;
-bool formationMode = true;  // USE IT OR NOT
+const uint8_t myId = 1; // follower
+bool formationMode = true;                // USE IT OR NOT
 
 typedef struct {
   int id;
@@ -46,15 +46,19 @@ byte msgSize = sizeof(msg);
 
 
 /* Measurements */
-//const int r = 22.5 * 1.866; // distance entre le centre du robot et capteurs
+//const int r = 22.5 * 1.866; // distance between the center of the robot and the sensors
 //const float teta = 30;
 const float safetyDistance = 20; // according with the speed, expressed in cm
 const float robotWidth = 20; // and the height is 12 cm
 
 
+/* LED */
+const uint8_t ledPin_backward = 13;
+
+
 /* Movement */
 volatile int currentState = 5; // initial state = forward
-int motorSpeed = 0;
+const int motorSpeed = 0;
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
@@ -185,37 +189,43 @@ void navigate()
   if ((currentState == 1 || currentState == -1) && (resultatExplore == 1 || resultatExplore == -1)) {
     resultatExplore = currentState;
   }
-  
-  if(resultatExplore != currentState) {
-    currentState = resultatExplore;
-    motorRight->run(RELEASE);
-    motorLeft->run(RELEASE);
 
-    // move forward  
-    if(resultatExplore == 0) { 
-      motorRight->run(FORWARD);
-      motorLeft->run(FORWARD);
-      Serial.println("forward");
-    }
-    // move backward
-    else if(resultatExplore == 2) {
-      motorRight->run(BACKWARD);
-      motorLeft->run(BACKWARD);
-      Serial.println("backward");
-    }
-    // move left
-    else if(resultatExplore == -1) { 
-      motorRight->run(BACKWARD);
-      motorLeft->run(FORWARD);
-      Serial.println("left");
-    }
-    // move right
-    else if(resultatExplore == 1) {
-      motorRight->run(FORWARD);
-      motorLeft->run(BACKWARD);
-      Serial.println("right");
-    }
-  } 
+  // turn off leds
+  digitalWrite(ledPin_backward, LOW);
+  delay(100);
+  
+  currentState = resultatExplore;
+  motorRight->run(RELEASE);
+  motorLeft->run(RELEASE);
+
+  // move forward  
+  if(resultatExplore == 0) { 
+    motorRight->run(FORWARD);
+    motorLeft->run(FORWARD);
+    Serial.println("  forward");
+  }
+  // move backward
+  else if(resultatExplore == 2) {
+    motorRight->run(BACKWARD);
+    motorLeft->run(BACKWARD);
+    
+    // turn on backward led
+    digitalWrite(ledPin_backward, HIGH);
+    
+    Serial.println("  backward");
+  }
+  // move left
+  else if(resultatExplore == -1) { 
+    motorRight->run(BACKWARD);
+    motorLeft->run(FORWARD);
+    Serial.println("  left");
+  }
+  // move right
+  else if(resultatExplore == 1) {
+    motorRight->run(FORWARD);
+    motorLeft->run(BACKWARD);
+    Serial.println("  right");
+  }
 }
 
 
@@ -231,8 +241,8 @@ void setup() {
   
   // Setup the receiver for communication
   vw_set_rx_pin(receive_pin);
-  vw_setup(2000); // VirtualWire library initialization to 2000 bauds
-  vw_rx_start();  // start receiver
+  vw_setup(2000); 
+  vw_rx_start();  
 
   // Right wheel
   // Set the speed to start, from 0 (off) to 255 (max speed)
@@ -247,6 +257,9 @@ void setup() {
   motorLeft->run(FORWARD);
   // turn on motor
   motorLeft->run(RELEASE);
+
+  // setup leds
+  pinMode(ledPin_backward, OUTPUT);
   
   //a completer avec temps correspondant en milliseconde voir la frequ a donner 
   //Timer1.initialize(1000000);  
@@ -268,7 +281,6 @@ void loop()
       Serial.print(msg.id);
       Serial.print("  Value: ");
       Serial.print(msg.value); 
-      Serial.println(); 
     }
 
     navigate();
