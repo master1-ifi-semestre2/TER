@@ -53,7 +53,7 @@ const float robotWidth = 20; // and the height is 12 cm
 
 
 /* LED */
-const uint8_t ledPin_backward = 13;
+const uint8_t ledPin_back = 13;
 
 
 /* Movement */
@@ -191,8 +191,8 @@ void navigate()
   }
 
   // turn off leds
-  digitalWrite(ledPin_backward, LOW);
-  delay(100);
+  digitalWrite(ledPin_back, LOW);
+  delay(100);   // SEE IF THIS DELAY AFFECTS FOLLOWING THE LEADER WHEN TURNING
   
   currentState = resultatExplore;
   motorRight->run(RELEASE);
@@ -210,7 +210,7 @@ void navigate()
     motorLeft->run(BACKWARD);
     
     // turn on backward led
-    digitalWrite(ledPin_backward, HIGH);
+    digitalWrite(ledPin_back, HIGH);
     
     Serial.println("  backward");
   }
@@ -259,7 +259,7 @@ void setup() {
   motorLeft->run(RELEASE);
 
   // setup leds
-  pinMode(ledPin_backward, OUTPUT);
+  pinMode(ledPin_back, OUTPUT);
   
   //a completer avec temps correspondant en milliseconde voir la frequ a donner 
   //Timer1.initialize(1000000);  
