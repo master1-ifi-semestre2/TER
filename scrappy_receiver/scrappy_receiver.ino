@@ -17,8 +17,9 @@
 #include <TimerOne.h>
 #include <VirtualWire.h>
 
-const uint8_t trigPin_front_left = 3; //envoie de signal
-const uint8_t echoPin_front_left = 2; //reçoit le signal
+/* Ultrasonic sensors */
+const uint8_t trigPin_front_left = 3; // trigger signal (sends)
+const uint8_t echoPin_front_left = 2; // echo signal (receives)
 
 const uint8_t trigPin_left = 9;
 const uint8_t echoPin_left = 8;
@@ -29,12 +30,11 @@ const uint8_t echoPin_front_right = 7;
 const uint8_t trigPin_right = 4;
 const uint8_t echoPin_right = 5;
 
-const int receive_pin = 11;
 
-//const int r = 22.5 * 1.866; // Distance entre le centre du robot et capteurs
-//const float teta = 30;
-const float safetyDistance = 20; // cm en fonction de la vitesse
-const float robotWidth = 20; // Hauteur 12 cm
+/* Communication */
+const int receive_pin = 11;
+const uint8_t myId = 1;
+bool formationMode = true;  // USE IT OR NOT
 
 typedef struct {
   int id;
@@ -44,8 +44,28 @@ typedef struct {
 Message msg;
 byte msgSize = sizeof(msg);
 
-const uint8_t myId = 1;
- 
+
+/* Measurements */
+//const int r = 22.5 * 1.866; // distance entre le centre du robot et capteurs
+//const float teta = 30;
+const float safetyDistance = 20; // according with the speed, expressed in cm
+const float robotWidth = 20; // and the height is 12 cm
+
+
+/* Movement */
+volatile int currentState = 5; // initial state = forward
+int motorSpeed = 0;
+
+// Create the motor shield object with the default I2C address
+Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
+// Or, create it with a different I2C address (say for stacking)
+// Adafruit_MotorShield AFMS = Adafruit_MotorShield(0x61); 
+
+// Select which 'port' M1, M2, M3 or M4. In this case, M1
+Adafruit_DCMotor *motorRight = AFMS.getMotor(1);
+// You can also make another motor on port M2
+Adafruit_DCMotor *motorLeft = AFMS.getMotor(2);
+
 
 /*float h_left; //espace libre à gauche 
 float h_right; // espace libre à droite */
@@ -60,20 +80,10 @@ float l_front_right;
 float l_left;
 float l_right;*/
 
-/* Etat initial = avancer */
-volatile int currentState = 5;
-
-// Create the motor shield object with the default I2C address
-Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
-// Or, create it with a different I2C address (say for stacking)
-// Adafruit_MotorShield AFMS = Adafruit_MotorShield(0x61); 
-
-// Select which 'port' M1, M2, M3 or M4. In this case, M1
-Adafruit_DCMotor *motorRight = AFMS.getMotor(1);
-// You can also make another motor on port M2
-Adafruit_DCMotor *motorLeft = AFMS.getMotor(2);
-
-float calculDistance(uint8_t trigPin,uint8_t echoPin){
+/*
+ * Calculates the distance with the information obtained from the sensors  
+ */
+float calculDistance(uint8_t trigPin,uint8_t echoPin) {
   uint32_t duration; // duration of the round trip
   float cm;  // distance of the obstacle
   
@@ -101,7 +111,12 @@ float calculDistance(uint8_t trigPin,uint8_t echoPin){
   return cm;
 }
 
-int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_right){
+
+
+/*
+ * Determines where to move
+ */
+int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_right) {
     
   /*Serial.print("devant gauche = ");
   Serial.print(cm_front_left);
@@ -112,16 +127,13 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_r
   Serial.print("  droit = ");
   Serial.println(cm_right);*/
 
-   if ((cm_front_right > robotWidth + safetyDistance) 
-      && (cm_front_left > robotWidth + safetyDistance) 
-      && (cm_left > robotWidth) 
-      && (cm_right > robotWidth)) {
-        // Si il y a de la place de partout, avancer
+   // if there is enough space everywhere then go forward
+   if ((cm_front_right > robotWidth + safetyDistance) && (cm_front_left > robotWidth + safetyDistance) && cm_left > robotWidth && cm_right > robotWidth) {     
          Serial.println("↑");
          return 0;
    }
-   else if (cm_front_left > robotWidth || cm_front_right > robotWidth){
-      // Si il n'y a plus de place devant mais reste de la place pour tourner, tourne dans un des côtés 
+   // if there is not enough space in front of it, but there's enough to turn then turn right or left (where there is more space)
+   else if (cm_front_left > robotWidth || cm_front_right > robotWidth) {
         if (cm_left > cm_right){
              Serial.println("←");
              return -1;
@@ -131,93 +143,112 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_r
              return 1;
         }   
    }
+   // if there's not enough space anywhere then go backward
    else {
-        // sinon reculer
         Serial.println("↓");
         return 2;
    }
- } 
+} 
 
+
+
+/*
+ * Moves the wheels
+ */
 void navigate()
 {
- /* float cm_front_left;  // distance of the obstacle
-  float cm_front_right;
-  float cm_left;
-  float cm_right;
-  
   int resultatExplore;
-  
-   noInterrupts();
-  cm_front_left = calculDistance(trigPin_front_left,echoPin_front_left);
-  cm_front_right = calculDistance(trigPin_front_right,echoPin_front_right);
-  cm_left = calculDistance(trigPin_left, echoPin_left);
-  cm_right = calculDistance(trigPin_right, echoPin_right);
 
-  resultatExplore=explore(cm_front_left, cm_front_right, cm_left, cm_right);
+  if(formationMode) 
+  {
+    //if (msg.id != myId) { // for when it has both an emitter and receiver, we want make sure we are not reading the message that we are sending
+      resultatExplore = msg.value;
+      //delay(100);
+    //}
+  } else {
+    float cm_front_left;  // distance of the obstacle
+    float cm_front_right;
+    float cm_left;
+    float cm_right;   
+    
+    noInterrupts();
+    cm_front_left = calculDistance(trigPin_front_left,echoPin_front_left);
+    cm_front_right = calculDistance(trigPin_front_right,echoPin_front_right);
+    cm_left = calculDistance(trigPin_left, echoPin_left);
+    cm_right = calculDistance(trigPin_right, echoPin_right);
   
-   interrupts();*/
-   
-  // S'il tourne, ne pas s'arrêter jusqu'a qu'il trouve de la place devant
-  if ((currentState == 1 || currentState == -1) && (resultatExplore == 1 || resultatExplore == -1)){
+    resultatExplore=explore(cm_front_left, cm_front_right, cm_left, cm_right);
+    interrupts();
+  }
+
+  // if it turns then don't stop turning until it finds free space in front of it
+  if ((currentState == 1 || currentState == -1) && (resultatExplore == 1 || resultatExplore == -1)) {
     resultatExplore = currentState;
   }
   
-  if(resultatExplore != currentState){
+  if(resultatExplore != currentState) {
     currentState = resultatExplore;
     motorRight->run(RELEASE);
     motorLeft->run(RELEASE);
-  
-    if(resultatExplore == 0){ 
-      // marche avant   
+
+    // move forward  
+    if(resultatExplore == 0) { 
       motorRight->run(FORWARD);
       motorLeft->run(FORWARD);
+      Serial.println("forward");
     }
-    else if(resultatExplore == 2){
-      // marche arrière 
+    // move backward
+    else if(resultatExplore == 2) {
       motorRight->run(BACKWARD);
       motorLeft->run(BACKWARD);
+      Serial.println("backward");
     }
-    else if(resultatExplore == -1){ 
-      // tourner à gauche 
+    // move left
+    else if(resultatExplore == -1) { 
       motorRight->run(BACKWARD);
       motorLeft->run(FORWARD);
+      Serial.println("left");
     }
-    else if(resultatExplore == 1){
-      // tourner à droite 
+    // move right
+    else if(resultatExplore == 1) {
       motorRight->run(FORWARD);
       motorLeft->run(BACKWARD);
+      Serial.println("right");
     }
   } 
 }
 
- 
+
+
+/*
+ * Initial setup
+ */
 void setup() {
-  
   // initialize serial communication:
   Serial.begin(9600);
   AFMS.begin();  // create with the default frequency 1.6KHz
   //AFMS.begin(1000);  // OR with a different frequency, say 1KHz
   
-  /*Set up du recepteur*/
+  // Setup the receiver for communication
   vw_set_rx_pin(receive_pin);
-  vw_setup(2000); // initialisation de la librairie VirtualWire à 2000 bauds
-  vw_rx_start();  // Activation de la partie réception de la librairie VirtualWire
+  vw_setup(2000); // VirtualWire library initialization to 2000 bauds
+  vw_rx_start();  // start receiver
 
-  
- 
+  // Right wheel
   // Set the speed to start, from 0 (off) to 255 (max speed)
-  motorRight->setSpeed(0);
+  motorRight->setSpeed(motorSpeed);
   motorRight->run(FORWARD);
   // turn on motor
   motorRight->run(RELEASE);
-  
-  //demarre le moteur numero 2
-  motorLeft->setSpeed(0);
+
+  // Left wheel
+  // Set the speed to start, from 0 (off) to 255 (max speed)
+  motorLeft->setSpeed(motorSpeed);
   motorLeft->run(FORWARD);
   // turn on motor
   motorLeft->run(RELEASE);
+  
   //a completer avec temps correspondant en milliseconde voir la frequ a donner 
-  //PIN 10 ET 9 inutilisable
   //Timer1.initialize(1000000);  
   //attacher la methode calcul de distance , a noter periode non obligatoire.
   //Timer1.attachInterrupt(navigate);
@@ -225,19 +256,20 @@ void setup() {
 
 
 
-
-
-
+/*
+ * It reads the message received and execute navigate
+ */
 void loop()
 {
-    if (vw_get_message((byte *) &msg, &msgSize)) // Non-blocking
+    // check if a message has been received and stores it in the corresponding structure
+    if (vw_get_message((byte *) &msg, &msgSize) && formationMode) // Non-blocking
     {
-      //Serial.print("Got:  ");
       Serial.print("Id: ");
       Serial.print(msg.id);
       Serial.print("  Value: ");
       Serial.print(msg.value); 
       Serial.println(); 
-      delay(100);
     }
+
+    navigate();
 }

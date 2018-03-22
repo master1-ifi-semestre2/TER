@@ -49,23 +49,19 @@ const float robotWidth = 20; // Hauteur 12 cm
 /* Etat initial quelconque */
 volatile int currentState = 5;
 
+const int speed_motor = 80;
+
 
 // Create the motor shield object with the default I2C address
-Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
-// Or, create it with a different I2C address (say for stacking)
-// Adafruit_MotorShield AFMS = Adafruit_MotorShield(0x61); 
+Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 
-// Select which 'port' M1, M2, M3 or M4. In this case, M1
 Adafruit_DCMotor *motorRight = AFMS.getMotor(1);
-// You can also make another motor on port M2
 Adafruit_DCMotor *motorLeft = AFMS.getMotor(2);
 
 float calculDistance(uint8_t trigPin,uint8_t echoPin){
   uint32_t duration; // duration of the round trip
   float cm;  // distance of the obstacle
   
-  // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
-  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
   pinMode(trigPin, OUTPUT);
   digitalWrite(trigPin, LOW);
   delayMicroseconds(3);
@@ -90,17 +86,17 @@ float calculDistance(uint8_t trigPin,uint8_t echoPin){
 
 int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_right){
     
-  Serial.print("G = ");
+ /* Serial.print("G = ");
   Serial.print(cm_left);
   Serial.print("  F = ");
   Serial.print(cm_front_left);
   Serial.print(" - ");
   Serial.print(cm_front_right);
   Serial.print("  D = ");
-  Serial.println(cm_right);
+  Serial.println(cm_right);*/
 
-   if ((cm_front_right > robotWidth + safetyDistance) 
-      && (cm_front_left > robotWidth + safetyDistance) 
+  if (((cm_front_right > robotWidth + safetyDistance) 
+      || (cm_front_left > robotWidth + safetyDistance))
       && (cm_left > robotWidth) 
       && (cm_right > robotWidth)) {
         // Si il y a de la place de partout, avancer
@@ -156,19 +152,11 @@ void navigate()
     if(resultatExplore == 0){ 
       // marche avant  
 
-       Serial.println("Marche avant");
+      Serial.println("Marche avant");
       motorRight->run(FORWARD);
       motorLeft->run(FORWARD);
 
-      //interrupts();
-      message.value = 0;
-      Serial.println("hello");
-      vw_send((byte*) &message, sizeof(message));
-      vw_wait_tx(); // On attend la fin de l'envoi
-      Serial.println("Message send !");
-
-      //noInterrupts();
-      //delay(100);
+      message.value = 0; 
     }
     else if(resultatExplore == 2){
       // marche arrière 
@@ -177,10 +165,6 @@ void navigate()
       motorLeft->run(BACKWARD);
 
       message.value = 2;
-      vw_send((byte*) &message, sizeof(message));
-      vw_wait_tx(); // On attend la fin de l'envoi
-      Serial.println("Message send !");
-      delay(100);
     }
     else if(resultatExplore == -1){ 
       // tourner à gauche
@@ -189,10 +173,6 @@ void navigate()
       motorLeft->run(FORWARD);
 
       message.value = -1;
-      vw_send((byte*) &message, sizeof(message));
-      vw_wait_tx(); // On attend la fin de l'envoi
-      Serial.println("Message send !");
-      delay(100);
     }
     else if(resultatExplore == 1){
       // tourner à droite 
@@ -201,15 +181,17 @@ void navigate()
       motorLeft->run(BACKWARD);
 
       message.value = 1;
-      vw_send((byte*) &message, sizeof(message));
-      vw_wait_tx(); // On attend la fin de l'envoi
-      Serial.println("Message send !");
-      delay(100);
     }
   } 
 }
 
- 
+void send_message(){
+  vw_send((byte*) &message, sizeof(message));
+  vw_wait_tx(); // On attend la fin de l'envoi
+  //Serial.println("Message send !");
+  delay(300);
+}
+
 void setup() {
  
   Serial.begin(9600);
@@ -217,28 +199,29 @@ void setup() {
   
   /* Set up de l'émetteur */
   vw_set_tx_pin(transmit_pin);
+  vw_set_ptt_inverted(true);
   vw_setup(2000);
 
   message.id = myId;
-  message.value = 5;
-
+  message.value = 0;
+  
   // Set the speed to start, from 0 (off) to 255 (max speed)
-  motorRight->setSpeed(0);
+  motorRight->setSpeed(speed_motor);
   motorRight->run(FORWARD);
   // turn on motor
   motorRight->run(RELEASE);
   
   //demarre le moteur numero 2
-  motorLeft->setSpeed(0);
+  motorLeft->setSpeed(speed_motor);
   motorLeft->run(FORWARD);
   // turn on motor
   motorLeft->run(RELEASE);
   
-  Timer1.initialize(1000000);
-  Timer1.attachInterrupt(navigate);
 }
 
 
 void loop()
 {
+  navigate();
+  send_message();
 }
