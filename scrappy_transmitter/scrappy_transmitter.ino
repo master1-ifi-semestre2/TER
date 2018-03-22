@@ -90,17 +90,17 @@ float calculDistance(uint8_t trigPin,uint8_t echoPin){
 
 int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_right){
     
-  Serial.print("G = ");
+ /* Serial.print("G = ");
   Serial.print(cm_left);
   Serial.print("  F = ");
   Serial.print(cm_front_left);
   Serial.print(" - ");
   Serial.print(cm_front_right);
   Serial.print("  D = ");
-  Serial.println(cm_right);
+  Serial.println(cm_right);*/
 
      if (((cm_front_right > robotWidth + safetyDistance) 
-      && (cm_front_left > robotWidth + safetyDistance))
+      || (cm_front_left > robotWidth + safetyDistance))
       && (cm_left > robotWidth) 
       && (cm_right > robotWidth)) {
         // Si il y a de la place de partout, avancer
@@ -204,13 +204,13 @@ void setup() {
   message.value = 0;
 
   // Set the speed to start, from 0 (off) to 255 (max speed)
-  motorRight->setSpeed(80);
+  motorRight->setSpeed(0);
   motorRight->run(FORWARD);
   // turn on motor
   motorRight->run(RELEASE);
   
   //demarre le moteur numero 2
-  motorLeft->setSpeed(80);
+  motorLeft->setSpeed(0);
   motorLeft->run(FORWARD);
   // turn on motor
   motorLeft->run(RELEASE);
@@ -223,8 +223,9 @@ void setup() {
 void loop()
 {
   navigate();
+  
   vw_send((byte*) &message, sizeof(message));
   vw_wait_tx(); // On attend la fin de l'envoi
-  Serial.println("Message send !");
-  delay(1000);
+  //Serial.println("Message send !");
+  delay(500);
 }
