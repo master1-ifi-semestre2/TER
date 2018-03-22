@@ -190,7 +190,13 @@ void navigate()
   } 
 }
 
- 
+void send_message(){
+  vw_send((byte*) &message, sizeof(message));
+  vw_wait_tx(); // On attend la fin de l'envoi
+  //Serial.println("Message send !");
+  delay(300);
+}
+
 void setup() {
  
   Serial.begin(9600);
@@ -198,34 +204,30 @@ void setup() {
   
   /* Set up de l'émetteur */
   vw_set_tx_pin(transmit_pin);
+  vw_set_ptt_inverted(true);
   vw_setup(2000);
 
   message.id = myId;
   message.value = 0;
-
+  
   // Set the speed to start, from 0 (off) to 255 (max speed)
-  motorRight->setSpeed(0);
+  motorRight->setSpeed(80);
   motorRight->run(FORWARD);
   // turn on motor
   motorRight->run(RELEASE);
   
   //demarre le moteur numero 2
-  motorLeft->setSpeed(0);
+  motorLeft->setSpeed(80);
   motorLeft->run(FORWARD);
   // turn on motor
   motorLeft->run(RELEASE);
   
-  /*Timer1.initialize(1000000);
-  Timer1.attachInterrupt(navigate);*/
 }
 
 
 void loop()
 {
   navigate();
+  send_message();
   
-  vw_send((byte*) &message, sizeof(message));
-  vw_wait_tx(); // On attend la fin de l'envoi
-  //Serial.println("Message send !");
-  delay(500);
 }
