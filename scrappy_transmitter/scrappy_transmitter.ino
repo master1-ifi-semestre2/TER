@@ -50,7 +50,11 @@ const float safetyDistance = 20; // according with the speed, expressed in cm
 const float robotWidth = 20; // and the height is 12 cm
 
 
-/* LED */
+/* LED 
+ * long side : pin
+ * short side : ground
+ * resistor : 100 Ohm
+ */
 const uint8_t ledPin_back = 13;
 
 
@@ -119,23 +123,23 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_r
 
    // if there is enough space everywhere then go forward
    if ((cm_front_right > robotWidth + safetyDistance) && (cm_front_left > robotWidth + safetyDistance) && cm_left > robotWidth && cm_right > robotWidth) {     
-         Serial.println("↑");
+         //Serial.println("↑");
          return 0;
    }
    // if there is not enough space in front of it, but there's enough to turn then turn right or left (where there is more space)
    else if (cm_front_left > robotWidth || cm_front_right > robotWidth) {
         if (cm_left > cm_right){
-             Serial.println("←");
+             //Serial.println("←");
              return -1;
         }
         else {
-             Serial.println("➝");
+             //Serial.println("➝");
              return 1;
         }   
    }
    // if there's not enough space anywhere then go backward
    else {
-        Serial.println("↓");
+        //Serial.println("↓");
         return 2;
    }
 } 
