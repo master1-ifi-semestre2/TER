@@ -32,7 +32,7 @@ const uint8_t echoPin_right = 5;
 
 
 /* Communication */
-const int receive_pin = 11;
+const int receive_pin = 11;               
 const uint8_t myId = 1; // follower
 bool formationMode = true;                // USE IT OR NOT
 
@@ -52,8 +52,14 @@ const float safetyDistance = 20; // according with the speed, expressed in cm
 const float robotWidth = 20; // and the height is 12 cm
 
 
-/* LED */
-const uint8_t ledPin_back = 13;
+/* LEDs
+ * long side : pin
+ * short side : ground
+ * resistor : 100 Ohm
+ */
+const uint8_t ledPin_left = 14;
+const uint8_t ledPin_back = 15;
+const uint8_t ledPin_right = 16;
 
 
 /* Movement */
@@ -191,7 +197,9 @@ void navigate()
   }
 
   // turn off leds
+  digitalWrite(ledPin_left, LOW);
   digitalWrite(ledPin_back, LOW);
+  digitalWrite(ledPin_right, LOW);
   delay(100);   // SEE IF THIS DELAY AFFECTS FOLLOWING THE LEADER WHEN TURNING
   
   currentState = resultatExplore;
@@ -219,12 +227,18 @@ void navigate()
     motorRight->run(BACKWARD);
     motorLeft->run(FORWARD);
     Serial.println("  left");
+
+    // turn on left led
+    digitalWrite(ledPin_left, HIGH);
   }
   // move right
   else if(resultatExplore == 1) {
     motorRight->run(FORWARD);
     motorLeft->run(BACKWARD);
     Serial.println("  right");
+
+    // turn on right led
+    digitalWrite(ledPin_right, HIGH);
   }
 }
 
@@ -259,7 +273,9 @@ void setup() {
   motorLeft->run(RELEASE);
 
   // setup leds
+  pinMode(ledPin_left, OUTPUT);
   pinMode(ledPin_back, OUTPUT);
+  pinMode(ledPin_right, OUTPUT);
   
   //a completer avec temps correspondant en milliseconde voir la frequ a donner 
   //Timer1.initialize(1000000);  

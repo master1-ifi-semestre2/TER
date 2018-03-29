@@ -32,7 +32,7 @@ const uint8_t echoPin_right = 5;
 
 
 /* Communication */
-const int transmit_pin = 12;
+const int transmit_pin = 12;    
 const uint8_t myId = 0; // boss
 
 typedef struct {
@@ -55,8 +55,9 @@ const float robotWidth = 20; // and the height is 12 cm
  * short side : ground
  * resistor : 100 Ohm
  */
-const uint8_t ledPin_back = 11;
-
+const uint8_t ledPin_left = 14;
+const uint8_t ledPin_back = 15;
+const uint8_t ledPin_right = 16;
 
 /* Movement */
 volatile int currentState = 5; // initial state = forward
@@ -173,7 +174,9 @@ void navigate()
   }
 
   // turn off leds
+  digitalWrite(ledPin_left, LOW);
   digitalWrite(ledPin_back, LOW);
+  digitalWrite(ledPin_right, LOW);
   delay(100);
   
   currentState = resultatExplore;
@@ -205,6 +208,9 @@ void navigate()
     motorRight->run(BACKWARD);
     motorLeft->run(FORWARD);
 
+    // turn on left led
+    digitalWrite(ledPin_left, HIGH);
+
     msg.value = -1;
   }
   // move right
@@ -212,6 +218,9 @@ void navigate()
     Serial.println("droite");
     motorRight->run(FORWARD);
     motorLeft->run(BACKWARD);
+
+    // turn on right led
+    digitalWrite(ledPin_right, HIGH);
 
     msg.value = 1;
   }
@@ -262,7 +271,9 @@ void setup() {
   motorLeft->run(RELEASE);
 
   // setup leds
+  pinMode(ledPin_left, OUTPUT);
   pinMode(ledPin_back, OUTPUT);
+  pinMode(ledPin_right, OUTPUT);
 }
 
 
