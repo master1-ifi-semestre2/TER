@@ -50,12 +50,12 @@ const float safetyDistance = 20; // according with the speed, expressed in cm
 const float robotWidth = 20; // and the height is 12 cm
 
 
-/* LED 
+/* LEDs
  * long side : pin
  * short side : ground
  * resistor : 100 Ohm
  */
-const uint8_t ledPin_back = 13;
+const uint8_t ledPin_back = 11;
 
 
 /* Movement */
