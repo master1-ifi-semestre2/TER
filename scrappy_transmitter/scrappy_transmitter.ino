@@ -61,16 +61,15 @@ const uint8_t ledPin_right = 16;
 
 /* Movement */
 volatile int currentState = 5; // initial state = forward
-const int motorSpeed = 0;
+const int motorSpeed = 80;
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 // Or, create it with a different I2C address (say for stacking)
 // Adafruit_MotorShield AFMS = Adafruit_MotorShield(0x61); 
 
-// Select which 'port' M1, M2, M3 or M4. In this case, M1
+/* Motor 1 -> right Motor 2 -> left */
 Adafruit_DCMotor *motorRight = AFMS.getMotor(1);
-// You can also make another motor on port M2
 Adafruit_DCMotor *motorLeft = AFMS.getMotor(2);
 
 
@@ -112,15 +111,14 @@ float calculDistance(uint8_t trigPin,uint8_t echoPin){
  * Determines where to move
  */
 int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_right) {
-    
-  /*Serial.print("devant gauche = ");
-  Serial.print(cm_front_left);
-  Serial.print("    devant droite = ");
-  Serial.println(cm_front_right);
-  Serial.print("  gauche = ");
+      
   Serial.print(cm_left);
-  Serial.print("  droit = ");
-  Serial.println(cm_right);*/
+  Serial.print("  -  ");
+  Serial.print(cm_front_left);
+  Serial.print("  -  ");
+  Serial.print(cm_front_right);
+  Serial.print("  -  ");
+  Serial.println(cm_right);
 
    // if there is enough space everywhere then go forward
    if ((cm_front_right > robotWidth + safetyDistance) && (cm_front_left > robotWidth + safetyDistance) && cm_left > robotWidth && cm_right > robotWidth) {     
@@ -283,5 +281,5 @@ void setup() {
 void loop()
 {
   navigate();
-  send_message();
+  //send_message();
 }
