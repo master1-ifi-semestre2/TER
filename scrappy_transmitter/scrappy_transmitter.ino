@@ -46,7 +46,7 @@ Message msg;
 /* Measurements */
 //const int r = 22.5 * 1.866; // distance between the center of the robot and the sensors
 //const float teta = 30;
-const float safetyDistance = 20; // according with the speed, expressed in cm
+const float safetyDistance = 10; // according with the speed, expressed in cm
 const float robotWidth = 20; // and the height is 12 cm
 
 
@@ -61,7 +61,7 @@ const uint8_t ledPin_right = 16;
 
 /* Movement */
 volatile int currentState = 5; // initial state = forward
-const int motorSpeed = 80;
+const int motorSpeed = 200;
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
