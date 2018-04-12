@@ -3,19 +3,33 @@
    Sonar Robot
 
    Authors:  
-      - WILHELM Andreina
       - BENSOUSSAN Chloé
-      - GRÉAU Alexandre
       - BOUKOU Grâce
-       
+      - GRÉAU Alexandre      
+      - WILHELM Andreina
+          
    Permissions: MIT licence
       
 *****************************************************************************/
+
+
+
+// CHECK TYPES IN EVERY FILE 
+
+
+
+
 #include <Wire.h>
 #include <Adafruit_MotorShield.h>
 #include <Adafruit_PWMServoDriver.h>
 #include <TimerOne.h>
 #include <VirtualWire.h>
+
+const uint8_t forward_ = 0;
+const uint8_t backward_ = 2;
+const uint8_t left_ = -1;
+const uint8_t right_ = 1;
+
 
 /* Ultrasonic sensors */
 const uint8_t trigPin_front_left = 3; // trigger signal (sends)
@@ -46,7 +60,7 @@ Message msg;
 /* Measurements */
 //const int r = 22.5 * 1.866; // distance between the center of the robot and the sensors
 //const float teta = 30;
-const float safetyDistance = 20; // according with the speed, expressed in cm
+const float safetyDistance = 10; // according with the speed, expressed in cm
 const float robotWidth = 20; // and the height is 12 cm
 
 
@@ -60,15 +74,15 @@ const uint8_t ledPin_back = 15;
 const uint8_t ledPin_right = 16;
 
 /* Movement */
-volatile int currentState = 5; // initial state = forward
-const int motorSpeed = 200;
+volatile int currentState = 5; // initial state = forward                 WHY NOT 0 WHICH IS FORWARD??  was it use in  the version we download?
+const int motorSpeed = 100;
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 // Or, create it with a different I2C address (say for stacking)
 // Adafruit_MotorShield AFMS = Adafruit_MotorShield(0x61); 
 
-/* Motor 1 -> right Motor 2 -> left */
+// Motor 1 -> right Motor 2 -> left
 Adafruit_DCMotor *motorRight = AFMS.getMotor(1);
 Adafruit_DCMotor *motorLeft = AFMS.getMotor(2);
 
@@ -107,10 +121,15 @@ float calculDistance(uint8_t trigPin,uint8_t echoPin){
 
 
 
+
+
+
 /*
  * Determines where to move
  */
-int sideDetected = 5;
+int objectDetected = 0;
+int randomMoveTime = 0;
+
 int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_right) {
       
   Serial.print(cm_left);
@@ -121,33 +140,83 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_r
   Serial.print("  -  ");
   Serial.println(cm_right);
 
-   // if there is enough space everywhere then go forward
-   if ((cm_front_right > robotWidth + safetyDistance) && (cm_front_left > robotWidth + safetyDistance) && cm_left > robotWidth && cm_right > robotWidth) {     
-         //Serial.println("↑");
-         return 0;
-   }
+
+  // this is the way you would stop going around the object.... ??
+  randomMoveTime++;
+  
+  if(randomMoveTime == 50) {
+    randomMoveTime = 0;
+    objectDetected = 0;
+  }
+  
+  // if there is enough space everywhere in front then go forward
+  if ((cm_front_right > robotWidth + safetyDistance) && (cm_front_left > robotWidth + safetyDistance)) 
+  {
+    // IF IT'S NOT PARALLEL TO THE OBJECT IT HAS TO TURN A LITTLE BIT AND THEN GO AROUND... AS IT IS IT WILL JUST GO STRAIGHT SO IT WILL HIT THE OBJECT AT SOME POINT   
+    if (objectDetected) {
+      if(objectDetected == left_ && cm_left > safetyDistance) {
+        return left_;
+      }
+      else if (objectDetected == right_ && cm_right > safetyDistance) {
+        return right_;
+      }      
+    }
+    else if(randomMoveTime != 0) {    // == 0 when it does the random movement... (which is not really random)
+      if (cm_left < safetyDistance) {
+        objectDetected = left_;
+      }
+      else if (cm_right < safetyDistance) {
+        objectDetected = right_;
+      }     
+    } 
 
 
-   
-   // if there is not enough space in front of it, but there's enough to turn then turn right or left (where there is more space)
-   else if (cm_front_left > robotWidth || cm_front_right > robotWidth) {
-        if (cm_left > cm_right){
-             //Serial.println("←");
-             sideDetected = 1;
-             return -1;
-        }
-        else {
-             //Serial.println("➝");
-             sideDetected = -1;
-             return 1;
-        }   
-   }
-   // if there's not enough space anywhere then go backward
-   else {
-        //Serial.println("↓");
-        return 2;
-   }
-} 
+
+    /* if (!objectDetected) {
+      if (cm_left < safetyDistance) {
+        objectDetected = left_;
+      }
+      else if (cm_right < safetyDistance) {
+        objectDetected = right_;
+      }
+    }
+    else {
+      if(objectDetected == left_ && cm_left > safetyDistance) {
+        return left_;
+      }
+      else if (objectDetected == right_ && cm_right > safetyDistance) {
+        return right_;
+      }
+    }*/
+    //Serial.println("↑");
+    return forward_;   
+  } 
+  // if there is not enough space to go forward, but there's enough to turn then turn right or left (where there is more space)
+  else if (cm_front_left > robotWidth || cm_front_right > robotWidth) 
+  {
+    if (cm_left > cm_right) {
+      //Serial.println("←");
+      objectDetected = right_;
+      return left_;
+    }
+    else {
+      //Serial.println("➝");
+      objectDetected = left_;
+      return right_;
+    }   
+  }
+  // if there's not enough space anywhere then go backward
+  else {
+    //Serial.println("↓");
+    return backward_;
+  }
+}
+
+
+
+
+
+
 
 
 

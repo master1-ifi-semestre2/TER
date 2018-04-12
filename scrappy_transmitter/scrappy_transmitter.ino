@@ -3,11 +3,11 @@
    Sonar Robot
 
    Authors:  
-      - WILHELM Andreina
       - BENSOUSSAN Chloé
-      - GRÉAU Alexandre
       - BOUKOU Grâce
-       
+      - GRÉAU Alexandre      
+      - WILHELM Andreina
+          
    Permissions: MIT licence
       
 *****************************************************************************/
@@ -60,7 +60,7 @@ const uint8_t ledPin_back = 15;
 const uint8_t ledPin_right = 16;
 
 /* Movement */
-volatile int currentState = 5; // initial state = forward
+volatile int currentState = 5; // initial state = forward                 WHY NOT 0 WHICH IS FORWARD??
 const int motorSpeed = 100;
 
 // Create the motor shield object with the default I2C address
@@ -68,7 +68,7 @@ Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 // Or, create it with a different I2C address (say for stacking)
 // Adafruit_MotorShield AFMS = Adafruit_MotorShield(0x61); 
 
-/* Motor 1 -> right Motor 2 -> left */
+// Motor 1 -> right Motor 2 -> left
 Adafruit_DCMotor *motorRight = AFMS.getMotor(1);
 Adafruit_DCMotor *motorLeft = AFMS.getMotor(2);
 
