@@ -61,7 +61,7 @@ const uint8_t ledPin_right = 16;
 
 /* Movement */
 volatile int currentState = 5; // initial state = forward
-const int motorSpeed = 0;
+const int motorSpeed = 200;
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
@@ -110,6 +110,7 @@ float calculDistance(uint8_t trigPin,uint8_t echoPin){
 /*
  * Determines where to move
  */
+int sideDetected = 5;
 int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_right) {
       
   Serial.print(cm_left);
@@ -125,14 +126,19 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_r
          //Serial.println("↑");
          return 0;
    }
+
+
+   
    // if there is not enough space in front of it, but there's enough to turn then turn right or left (where there is more space)
    else if (cm_front_left > robotWidth || cm_front_right > robotWidth) {
         if (cm_left > cm_right){
              //Serial.println("←");
+             sideDetected = 1;
              return -1;
         }
         else {
              //Serial.println("➝");
+             sideDetected = -1;
              return 1;
         }   
    }
