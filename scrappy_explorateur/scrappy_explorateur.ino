@@ -75,7 +75,7 @@ const uint8_t ledPin_right = 16;
 
 /* Movement */
 volatile int currentState = 0; // initial state = forward
-const int motorSpeed = 100;
+const int motorSpeed = 130;
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
@@ -129,7 +129,9 @@ float calculDistance(uint8_t trigPin,uint8_t echoPin){
  */
 int objectDetected = 0; // 0 false, !0 true
 int randomMoveTime = 0;
-bool turn = false;
+bool hasTurned = false;
+int numMove = 2;
+int moveCounter = 0;
 
 int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_right) {
     
@@ -141,6 +143,10 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_r
   Serial.print("  -  ");
   Serial.println(cm_right);
 
+  if (cm_left == 0) cm_left = 3000;
+  if (cm_front_left == 0) cm_front_left = 3000;
+  if (cm_front_right == 0) cm_front_right = 3000;
+  if (cm_right == 0) cm_right = 3000;
 
   // this is the way you would stop going around the object.... ??
   randomMoveTime++;
@@ -155,17 +161,43 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_r
   {
     // IF IT'S NOT PARALLEL TO THE OBJECT IT HAS TO TURN A LITTLE BIT AND THEN GO AROUND... AS IT IS IT WILL JUST GO STRAIGHT SO IT WILL HIT THE OBJECT AT SOME POINT   
     if (objectDetected) {
-      if(objectDetected == LEFT_ && cm_left > safetyDistance && turn == false) {
+      if(objectDetected == LEFT_) {
         /* Object detected in left side, and he has pass the object, then he has to turn in left */
-        Serial.println("Pass the object LEFT");
-        turn = true;
-        return LEFT_;
-      }
-      else if (objectDetected == RIGHT_ && cm_right > safetyDistance && turn == false) {
+        if(cm_left > safetyDistance) {
+          if(!hasTurned) {
+            Serial.println("Pass the object LEFT - LEFT - !hasturned");
+            hasTurned = true;
+            return LEFT_;
+          }
+          else{
+              if(moveCounter < numMove/2) {
+                moveCounter++;
+                Serial.println("Pass the object LEFT - LEFT - hasturned");
+                return LEFT_;    
+              } else if(moveCounter < numMove) {
+                moveCounter++;
+                Serial.println("Pass the object LEFT - FORWARD");
+                return FORWARD_;
+              } else {
+                moveCounter = 0;  
+                Serial.println("Pass the object LEFT - FORWARD");
+                return FORWARD_;
+              }
+          }
+        }
+        else {
+          hasTurned = false;
+          moveCounter = 0;
+          Serial.println("PASSING the object LEFT - FORWARD");  
+          return FORWARD_;
+        }
+        
+      } 
+     /* else if (objectDetected == RIGHT_ && cm_right > safetyDistance && hasTurned == false) {
         Serial.println("Pass the object RIGHT");
-        turn = true;
+        hasTurned = true;
         return RIGHT_;
-      }      
+      }*/      
     }
     else if(randomMoveTime != 0) {    // == 0 when it does the random movement... (which is not really random)
       /* He checkes both side to see if there is an object*/
@@ -180,9 +212,11 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_r
     } 
     //Serial.println("↑");
     /* There is no object or he has just faund one */
-    turn = false;
+   // hasTurned = false;
     return FORWARD_;   
   } 
+
+  
   // if there is not enough space to go forward, but there's enough to turn then turn right or left (where there is more space)
   else if (cm_front_left > robotWidth || cm_front_right > robotWidth) 
   {
