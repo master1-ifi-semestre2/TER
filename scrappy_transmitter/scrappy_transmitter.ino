@@ -17,6 +17,11 @@
 #include <TimerOne.h>
 #include <VirtualWire.h>
 
+#define FORWARD_ 0
+#define BACKWARD_ 2
+#define LEFT_ -1
+#define RIGHT_ 1
+
 /* Ultrasonic sensors */
 const uint8_t trigPin_front_left = 3; // trigger signal (sends)
 const uint8_t echoPin_front_left = 2; // echo signal (receives)
@@ -44,8 +49,6 @@ Message msg;
 
 
 /* Measurements */
-//const int r = 22.5 * 1.866; // distance between the center of the robot and the sensors
-//const float teta = 30;
 const float safetyDistance = 10; // according with the speed, expressed in cm
 const float robotWidth = 20; // and the height is 12 cm
 
@@ -60,7 +63,7 @@ const uint8_t ledPin_back = 15;
 const uint8_t ledPin_right = 16;
 
 /* Movement */
-volatile int currentState = 5; // initial state = forward                 WHY NOT 0 WHICH IS FORWARD??
+volatile int currentState = FORWARD_; // initial state = forward 
 const int motorSpeed = 100;
 
 // Create the motor shield object with the default I2C address
@@ -106,7 +109,6 @@ float calculDistance(uint8_t trigPin,uint8_t echoPin){
 }
 
 
-
 /*
  * Determines where to move
  */
@@ -123,23 +125,23 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_r
    // if there is enough space everywhere then go forward
    if ((cm_front_right > robotWidth + safetyDistance) && (cm_front_left > robotWidth + safetyDistance) && cm_left > safetyDistance && cm_right > safetyDistance){    
          //Serial.println("↑");
-         return 0;
+         return FORWARD_;
    }
    // if there is not enough space in front of it, but there's enough to turn then turn right or left (where there is more space)
    else if (cm_front_left > robotWidth || cm_front_right > robotWidth) {
         if (cm_left > cm_right){
              //Serial.println("←");
-             return -1;
+             return LEFT_;
         }
         else {
-             //Serial.println("➝");
-             return 1;
+             //SeriaRIGHT.println("➝");
+             return RIGHT_;
         }   
    }
    // if there's not enough space anywhere then go backward
    else {
         //Serial.println("↓");
-        return 2;
+        return BACKWARD_;
    }
 } 
 
@@ -165,9 +167,9 @@ void navigate()
 
   resultatExplore=explore(cm_front_left, cm_front_right, cm_left, cm_right);
   interrupts();
-   
+
   // if it turns then don't stop turning until it finds free space in front of it
-  if ((currentState == 1 || currentState == -1) && (resultatExplore == 1 || resultatExplore == -1)) {
+  if ((currentState == RIGHT_ || currentState == LEFT_) && (resultatExplore == LEFT_ || resultatExplore == RIGHT_)) {
     resultatExplore = currentState;
   }
 
@@ -182,15 +184,15 @@ void navigate()
   motorLeft->run(RELEASE);
 
   // move forward  
-  if(resultatExplore == 0) { 
+  if(resultatExplore == FORWARD_) { 
     Serial.println("Marche avant");
     motorRight->run(FORWARD);
     motorLeft->run(FORWARD);
 
-    msg.value = 0; 
+    msg.value = FORWARD_; 
   }
   // move backward
-  else if(resultatExplore == 2) {
+  else if(resultatExplore == BACKWARD_) {
     Serial.println("Marche arriere");
     motorRight->run(BACKWARD);
     motorLeft->run(BACKWARD);
@@ -198,10 +200,10 @@ void navigate()
     // turn on backward led
     digitalWrite(ledPin_back, HIGH);
 
-    msg.value = 2;
+    msg.value = BACKWARD_;
   }
   // move left
-  else if(resultatExplore == -1) { 
+  else if(resultatExplore == LEFT_) { 
     Serial.println("gauche"); 
     motorRight->run(BACKWARD);
     motorLeft->run(FORWARD);
@@ -209,10 +211,10 @@ void navigate()
     // turn on left led
     digitalWrite(ledPin_left, HIGH);
 
-    msg.value = -1;
+    msg.value = LEFT_;
   }
   // move right
-  else if(resultatExplore == 1) {
+  else if(resultatExplore == RIGHT_) {
     Serial.println("droite");
     motorRight->run(FORWARD);
     motorLeft->run(BACKWARD);
@@ -220,7 +222,7 @@ void navigate()
     // turn on right led
     digitalWrite(ledPin_right, HIGH);
 
-    msg.value = 1;
+    msg.value = RIGHT_;
   }
 }
 
@@ -252,7 +254,7 @@ void setup() {
 
   // Set initial message
   msg.id = myId;
-  msg.value = 0;
+  msg.value = FORWARD_;
 
   // Right wheel
   // Set the speed to start, from 0 (off) to 255 (max speed)
