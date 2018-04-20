@@ -25,10 +25,10 @@
 #include <TimerOne.h>
 #include <VirtualWire.h>
 
-const uint8_t forward_ = 0;
-const uint8_t backward_ = 2;
-const uint8_t left_ = -1;
-const uint8_t right_ = 1;
+#define FORWARD_ 0
+#define BACKWARD_ 2
+#define LEFT_ -1
+#define RIGHT_ 1
 
 
 /* Ultrasonic sensors */
@@ -60,7 +60,7 @@ Message msg;
 /* Measurements */
 //const int r = 22.5 * 1.866; // distance between the center of the robot and the sensors
 //const float teta = 30;
-const float safetyDistance = 10; // according with the speed, expressed in cm
+const float safetyDistance = 20; // according with the speed, expressed in cm
 const float robotWidth = 20; // and the height is 12 cm
 
 
@@ -74,7 +74,7 @@ const uint8_t ledPin_back = 15;
 const uint8_t ledPin_right = 16;
 
 /* Movement */
-volatile int currentState = 5; // initial state = forward                 WHY NOT 0 WHICH IS FORWARD??  was it use in  the version we download?
+volatile int currentState = 0; // initial state = forward
 const int motorSpeed = 100;
 
 // Create the motor shield object with the default I2C address
@@ -127,11 +127,12 @@ float calculDistance(uint8_t trigPin,uint8_t echoPin){
 /*
  * Determines where to move
  */
-int objectDetected = 0;
+int objectDetected = 0; // 0 false, !0 true
 int randomMoveTime = 0;
+bool turn = false;
 
 int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_right) {
-      
+    
   Serial.print(cm_left);
   Serial.print("  -  ");
   Serial.print(cm_front_left);
@@ -154,61 +155,54 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_r
   {
     // IF IT'S NOT PARALLEL TO THE OBJECT IT HAS TO TURN A LITTLE BIT AND THEN GO AROUND... AS IT IS IT WILL JUST GO STRAIGHT SO IT WILL HIT THE OBJECT AT SOME POINT   
     if (objectDetected) {
-      if(objectDetected == left_ && cm_left > safetyDistance) {
-        return left_;
+      if(objectDetected == LEFT_ && cm_left > safetyDistance && turn == false) {
+        /* Object detected in left side, and he has pass the object, then he has to turn in left */
+        Serial.println("Pass the object LEFT");
+        turn = true;
+        return LEFT_;
       }
-      else if (objectDetected == right_ && cm_right > safetyDistance) {
-        return right_;
+      else if (objectDetected == RIGHT_ && cm_right > safetyDistance && turn == false) {
+        Serial.println("Pass the object RIGHT");
+        turn = true;
+        return RIGHT_;
       }      
     }
     else if(randomMoveTime != 0) {    // == 0 when it does the random movement... (which is not really random)
+      /* He checkes both side to see if there is an object*/
       if (cm_left < safetyDistance) {
-        objectDetected = left_;
+        Serial.println("object detected LEFT");
+        objectDetected = LEFT_;
       }
       else if (cm_right < safetyDistance) {
-        objectDetected = right_;
+        Serial.println("object detected RIGHT");
+        objectDetected = RIGHT_;
       }     
     } 
-
-
-
-    /* if (!objectDetected) {
-      if (cm_left < safetyDistance) {
-        objectDetected = left_;
-      }
-      else if (cm_right < safetyDistance) {
-        objectDetected = right_;
-      }
-    }
-    else {
-      if(objectDetected == left_ && cm_left > safetyDistance) {
-        return left_;
-      }
-      else if (objectDetected == right_ && cm_right > safetyDistance) {
-        return right_;
-      }
-    }*/
     //Serial.println("↑");
-    return forward_;   
+    /* There is no object or he has just faund one */
+    turn = false;
+    return FORWARD_;   
   } 
   // if there is not enough space to go forward, but there's enough to turn then turn right or left (where there is more space)
   else if (cm_front_left > robotWidth || cm_front_right > robotWidth) 
   {
     if (cm_left > cm_right) {
       //Serial.println("←");
-      objectDetected = right_;
-      return left_;
+      Serial.println("object detected FRONT -> side RIGHT");
+      objectDetected = RIGHT_;
+      return LEFT_;
     }
     else {
       //Serial.println("➝");
-      objectDetected = left_;
-      return right_;
+      Serial.println("object detected FRONT -> side LEFT");
+      objectDetected = LEFT_;
+      return RIGHT_;
     }   
   }
   // if there's not enough space anywhere then go backward
   else {
     //Serial.println("↓");
-    return backward_;
+    return BACKWARD_;
   }
 }
 
