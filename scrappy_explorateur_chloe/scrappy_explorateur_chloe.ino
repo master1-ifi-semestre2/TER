@@ -41,8 +41,8 @@ const uint8_t echoPin_left = 8;
 const uint8_t trigPin_front_right = 6;
 const uint8_t echoPin_front_right = 7;
 
-const uint8_t trigPin_right = 4;
-const uint8_t echoPin_right = 5;
+const uint8_t trigPin_LEFT = 4;
+const uint8_t echoPin_LEFT = 5;
 
 
 /* Communication */
@@ -75,7 +75,7 @@ const uint8_t ledPin_right = 16;
 
 /* Movement */
 volatile int currentState = 0; // initial state = forward
-const int motorSpeed = 150;
+const int motorSpeed = 130;
 
 
 // Create the motor shield object with the default I2C address
@@ -129,17 +129,17 @@ float calculDistance(uint8_t trigPin,uint8_t echoPin){
  * Determines where to move
  */
 int objectDetected = 0; // 0 false, !0 true
-int randomMoveTime = 0;
+//int randomMoveTime = 0;
 //bool turn = false;
 
-int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_right) {  
-  /*Serial.print(cm_left);
+int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_LEFT) {  
+  Serial.print(cm_left);
   Serial.print("  -  ");
   Serial.print(cm_front_left);
   Serial.print("  -  ");
   Serial.print(cm_front_right);
   Serial.print("  -  ");
-  Serial.println(cm_right);*/
+  Serial.println(cm_LEFT);
 
 
   /* Modifier algo explorateur !
@@ -148,40 +148,36 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_r
 
 
   // this is the way you would stop going around the object.... ??
-  randomMoveTime++;
+  //randomMoveTime++;
   
-  if(randomMoveTime == 50) {
+  /*if(randomMoveTime == 50) {
     randomMoveTime = 0;
     objectDetected = 0;
-  }
+  }*/
   
   // if there is enough space everywhere in front then go forward
   if ((cm_front_right > robotWidth + safetyDistance) && (cm_front_left > robotWidth + safetyDistance)) 
-  {
-    // IF IT'S NOT PARALLEL TO THE OBJECT IT HAS TO TURN A LITTLE BIT AND THEN GO AROUND... AS IT IS IT WILL JUST GO STRAIGHT SO IT WILL HIT THE OBJECT AT SOME POINT   
+  {  
     if (objectDetected) {
-      if(objectDetected == LEFT_ && cm_left > safetyDistance/* && turn == false*/) {
+      // Si il a déjà détecté un objet
+      if(objectDetected == LEFT_ && cm_LEFT > safetyDistance && cm_left > safetyDistance/* && turn == false*/) {
         /* Object detected in left side, and he has pass the object, then he has to turn in left */
         Serial.println("Pass the object LEFT");
         //turn = true;
         return LEFT_;
-      }
-      else if (objectDetected == RIGHT_ && cm_right > safetyDistance /*&& turn == false*/) {
-        Serial.println("Pass the object RIGHT");
+      } 
+      else if (objectDetected == LEFT_ && (cm_LEFT < safetyDistance - 15 ||  cm_left < safetyDistance - 15)){
+          Serial.println("Trop près de l'object ***** tourne un peu a droite");
         //turn = true;
         return RIGHT_;
-      }      
+      }
     }
-    else if(randomMoveTime != 0) {    // == 0 when it does the random movement... (which is not really random)
+    else if(cm_LEFT < safetyDistance) {//randomMoveTime != 0) {    // == 0 when it does the random movement... (which is not really random)
       /* He checkes both side to see if there is an object*/
-      if (cm_left < safetyDistance) {
+      //if (cm_left < safetyDistance) {
         Serial.println("object detected LEFT");
         objectDetected = LEFT_;
-      }
-      else if (cm_right < safetyDistance) {
-        Serial.println("object detected RIGHT");
-        objectDetected = RIGHT_;
-      }     
+     // }   
     } 
     //Serial.println("↑");
     /* There is no object or he has just faund one */
@@ -189,7 +185,7 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_r
     return FORWARD_;   
   } 
   // if there is not enough space to go forward, but there's enough to turn then turn right or left (where there is more space)
-  else if (cm_front_left > robotWidth || cm_front_right > robotWidth) 
+  /*else if (cm_front_left > robotWidth || cm_front_right > robotWidth) 
   {
     if (cm_left > cm_right) {
       //Serial.println("←");
@@ -208,8 +204,9 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_r
   else {
     //Serial.println("↓");
     return BACKWARD_;
+  }*/
   }
-}
+
 
 
 
@@ -229,15 +226,15 @@ void navigate()
   float cm_front_left;  // distance of the obstacle
   float cm_front_right;
   float cm_left;
-  float cm_right;
+  float cm_LEFT;
   
   noInterrupts();
   cm_front_left = calculDistance(trigPin_front_left,echoPin_front_left);
   cm_front_right = calculDistance(trigPin_front_right,echoPin_front_right);
   cm_left = calculDistance(trigPin_left, echoPin_left);
-  cm_right = calculDistance(trigPin_right, echoPin_right);
+  cm_LEFT = calculDistance(trigPin_LEFT, echoPin_LEFT);
 
-  resultatExplore=explore(cm_front_left, cm_front_right, cm_left, cm_right);
+  resultatExplore=explore(cm_front_left, cm_front_right, cm_left, cm_LEFT);
   interrupts();
 
   // if it turns then don't stop turning until it finds free space in front of it
@@ -257,7 +254,7 @@ void navigate()
 
   // move forward  
   if(resultatExplore == 0) { 
-    Serial.println("Marche avant");
+    //Serial.println("Marche avant");
     motorRight->run(FORWARD);
     motorLeft->run(FORWARD);
 
@@ -265,7 +262,7 @@ void navigate()
   }
   // move backward
   else if(resultatExplore == 2) {
-    Serial.println("Marche arriere");
+    //Serial.println("Marche arriere");
     motorRight->run(BACKWARD);
     motorLeft->run(BACKWARD);
 
@@ -276,7 +273,7 @@ void navigate()
   }
   // move left
   else if(resultatExplore == -1) { 
-    Serial.println("gauche"); 
+    //Serial.println("gauche"); 
     motorRight->run(RELEASE);
     motorLeft->run(FORWARD);
 
@@ -287,7 +284,7 @@ void navigate()
   }
   // move right
   else if(resultatExplore == 1) {
-    Serial.println("droite");
+    //Serial.println("droite");
     motorRight->run(FORWARD);
     motorLeft->run(RELEASE);
 
@@ -327,8 +324,6 @@ void setup() {
   // Set initial message
   msg.id = myId;
   msg.value = 0;
-
-  turn_direction[0] = -10;
 
   // Right wheel
   // Set the speed to start, from 0 (off) to 255 (max speed)
