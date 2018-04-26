@@ -74,8 +74,8 @@ const uint8_t ledPin_back = 15;
 const uint8_t ledPin_right = 16;
 
 /* Movement */
-volatile int currentState = 0; // initial state = forward
-const int motorSpeed = 130;
+volatile int currentState = FORWARD_; // initial state = forward
+const int motorSpeed = 90;
 
 
 // Create the motor shield object with the default I2C address
@@ -138,7 +138,7 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_L
   Serial.print(cm_front_left);
   Serial.print("  -  ");
   Serial.print(cm_front_right);
-  Serial.print("  -  ");
+  Serial.print("  -  (debout) ");
   Serial.println(cm_LEFT);
 
 
@@ -159,6 +159,7 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_L
   if ((cm_front_right > robotWidth + safetyDistance) && (cm_front_left > robotWidth + safetyDistance)) 
   {  
     if (objectDetected) {
+      
       // Si il a déjà détecté un objet
       if(objectDetected == LEFT_ && cm_LEFT > safetyDistance && cm_left > safetyDistance/* && turn == false*/) {
         /* Object detected in left side, and he has pass the object, then he has to turn in left */
@@ -166,13 +167,13 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_L
         //turn = true;
         return LEFT_;
       } 
-      else if (objectDetected == LEFT_ && (cm_LEFT < safetyDistance - 15 ||  cm_left < safetyDistance - 15)){
-          Serial.println("Trop près de l'object ***** tourne un peu a droite");
+      else if (objectDetected == LEFT_ && (cm_LEFT < safetyDistance - 10 ||  cm_left < safetyDistance - 10 || cm_front_right < safetyDistance - 10 || cm_front_left < safetyDistance - 10)){
+          Serial.println("Trop près de l'object ***** ou obstacle devant ***** tourne un peu a droite");
         //turn = true;
         return RIGHT_;
       }
     }
-    else if(cm_LEFT < safetyDistance) {//randomMoveTime != 0) {    // == 0 when it does the random movement... (which is not really random)
+    else if(cm_LEFT < safetyDistance || cm_left < safetyDistance) {//randomMoveTime != 0) {    // == 0 when it does the random movement... (which is not really random)
       /* He checkes both side to see if there is an object*/
       //if (cm_left < safetyDistance) {
         Serial.println("object detected LEFT");
@@ -214,7 +215,7 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_L
 
 
 
-
+int tick = 0;
 
 /*
  * Moves the wheels
@@ -234,14 +235,13 @@ void navigate()
   cm_left = calculDistance(trigPin_left, echoPin_left);
   cm_LEFT = calculDistance(trigPin_LEFT, echoPin_LEFT);
 
-  resultatExplore=explore(cm_front_left, cm_front_right, cm_left, cm_LEFT);
+  resultatExplore = explore(cm_front_left, cm_front_right, cm_left, cm_LEFT);
   interrupts();
 
-  // if it turns then don't stop turning until it finds free space in front of it
-  if ((currentState == 1 || currentState == -1) && (resultatExplore == 1 || resultatExplore == -1)) {
-    resultatExplore = currentState;
-  }
-
+  tick++;
+  Serial.print("                                     tick ");
+  Serial.println(tick);
+  
   // turn off leds
   digitalWrite(ledPin_left, LOW);
   digitalWrite(ledPin_back, LOW);
@@ -253,15 +253,15 @@ void navigate()
   motorLeft->run(RELEASE);
 
   // move forward  
-  if(resultatExplore == 0) { 
+  if(resultatExplore == FORWARD_) { 
     //Serial.println("Marche avant");
     motorRight->run(FORWARD);
     motorLeft->run(FORWARD);
 
-    msg.value = 0; 
+    msg.value = FORWARD_; 
   }
   // move backward
-  else if(resultatExplore == 2) {
+  else if(resultatExplore == BACKWARD_) {
     //Serial.println("Marche arriere");
     motorRight->run(BACKWARD);
     motorLeft->run(BACKWARD);
@@ -269,10 +269,10 @@ void navigate()
     // turn on backward led
     digitalWrite(ledPin_back, HIGH);
 
-    msg.value = 2;
+    msg.value = BACKWARD_;
   }
   // move left
-  else if(resultatExplore == -1) { 
+  else if(resultatExplore == LEFT_) { 
     //Serial.println("gauche"); 
     motorRight->run(RELEASE);
     motorLeft->run(FORWARD);
@@ -280,10 +280,10 @@ void navigate()
     // turn on left led
     digitalWrite(ledPin_left, HIGH);
 
-    msg.value = -1;
+    msg.value = LEFT_;
   }
   // move right
-  else if(resultatExplore == 1) {
+  else if(resultatExplore == RIGHT_) {
     //Serial.println("droite");
     motorRight->run(FORWARD);
     motorLeft->run(RELEASE);
@@ -291,7 +291,7 @@ void navigate()
     // turn on right led
     digitalWrite(ledPin_right, HIGH);
 
-    msg.value = 1;
+    msg.value = RIGHT_;
   }
 }
 
