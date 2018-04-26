@@ -75,7 +75,7 @@ const uint8_t ledPin_right = 16;
 
 /* Movement */
 volatile int currentState = FORWARD_; // initial state = forward
-const int motorSpeed = 90;
+const int motorSpeed = 50;
 
 
 // Create the motor shield object with the default I2C address
@@ -129,8 +129,6 @@ float calculDistance(uint8_t trigPin,uint8_t echoPin){
  * Determines where to move
  */
 int objectDetected = 0; // 0 false, !0 true
-//int randomMoveTime = 0;
-//bool turn = false;
 
 int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_LEFT) {  
   Serial.print(cm_left);
@@ -139,77 +137,70 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_L
   Serial.print("  -  ");
   Serial.print(cm_front_right);
   Serial.print("  -  (debout) ");
-  Serial.println(cm_LEFT);
+  Serial.println(cm_LEFT);  
 
-
-  /* Modifier algo explorateur !
-  
-  TODO : tourner Jusqu'a que left_diagonal trouve l'objet */
-
-
-  // this is the way you would stop going around the object.... ??
-  //randomMoveTime++;
-  
-  /*if(randomMoveTime == 50) {
-    randomMoveTime = 0;
-    objectDetected = 0;
-  }*/
-  
-  // if there is enough space everywhere in front then go forward
-  if ((cm_front_right > robotWidth + safetyDistance) && (cm_front_left > robotWidth + safetyDistance)) 
-  {  
-    if (objectDetected) {
+ if (objectDetected == LEFT_) {
       
       // Si il a déjà détecté un objet
-      if(objectDetected == LEFT_ && cm_LEFT > safetyDistance && cm_left > safetyDistance/* && turn == false*/) {
+      if(cm_LEFT > safetyDistance && cm_left > safetyDistance/* && turn == false*/) {
         /* Object detected in left side, and he has pass the object, then he has to turn in left */
         Serial.println("Pass the object LEFT");
         //turn = true;
         return LEFT_;
       } 
-      else if (objectDetected == LEFT_ && (cm_LEFT < safetyDistance - 10 ||  cm_left < safetyDistance - 10 || cm_front_right < safetyDistance - 10 || cm_front_left < safetyDistance - 10)){
+      if (cm_LEFT < safetyDistance - 10 ||  cm_left < safetyDistance - 10 || cm_front_right < safetyDistance || cm_front_left < safetyDistance){
           Serial.println("Trop près de l'object ***** ou obstacle devant ***** tourne un peu a droite");
         //turn = true;
         return RIGHT_;
-      }
-    }
-    else if(cm_LEFT < safetyDistance || cm_left < safetyDistance) {//randomMoveTime != 0) {    // == 0 when it does the random movement... (which is not really random)
-      /* He checkes both side to see if there is an object*/
-      //if (cm_left < safetyDistance) {
-        Serial.println("object detected LEFT");
-        objectDetected = LEFT_;
-     // }   
-    } 
-    //Serial.println("↑");
-    /* There is no object or he has just faund one */
-    //turn = false;
-    return FORWARD_;   
-  } 
-  // if there is not enough space to go forward, but there's enough to turn then turn right or left (where there is more space)
-  /*else if (cm_front_left > robotWidth || cm_front_right > robotWidth) 
-  {
-    if (cm_left > cm_right) {
-      //Serial.println("←");
-      Serial.println("object detected FRONT -> side RIGHT");
-      objectDetected = RIGHT_;
-      return LEFT_;
-    }
-    else {
-      //Serial.println("➝");
-      Serial.println("object detected FRONT -> side LEFT");
-      objectDetected = LEFT_;
-      return RIGHT_;
-    }   
-  }
-  // if there's not enough space anywhere then go backward
+      } 
+    Serial.println("Tout droit object detected");
+    return FORWARD_; 
+  }   
   else {
-    //Serial.println("↓");
-    return BACKWARD_;
-  }*/
+    /* Pas d'object détecté !!*/
+
+    if(cm_LEFT < safetyDistance || cm_left < safetyDistance) {
+        /* Detected an object in left side */
+        Serial.println("object detected LEFT");
+         objectDetected = LEFT_;
+     }
+     else if(cm_RIGHT < safetyDistance || cm_right < safetyDistance) {
+        /* Detected an object in right side */
+        Serial.println("object detected RIGHT");
+         objectDetected = RIGHT_;
+     }
+     else if(cm_front_left < safetyDistance || cm_front_right < safetyDistance) {
+        /* He detects an object in front of him */
+        Serial.print("object detected FRONT");
+
+        if(cm_LEFT < safetyDistance || cm_left < safetyDistance) {
+            /* There is an object on left side */
+            Serial.println(" - LEFT");
+            objectDetected = LEFT_;
+            return RIGHT_;
+        }
+        else if(cm_RIGHT < safetyDistance || cm_right < safetyDistance) {
+            /* There is an object on right side */
+            Serial.println(" - RIGHT");
+            objectDetected = RIGHT_;
+            return LEFT_;
+        }
+        else {
+            /* Sinon comparer les deux côtés */
+            if  (cm_right > cm_left){
+                Serial.println(" - LEFT");
+                objectDetected = LEFT_;
+                return RIGHT_;
+            }
+            Serial.println(" - RIGHT");
+            objectDetected = RIGHT_;
+            return LEFT_;
+        }
+     }
+     Serial.println("Tout droit");
+     return FORWARD_; 
   }
-
-
-
+} 
 
 
 
@@ -239,7 +230,7 @@ void navigate()
   interrupts();
 
   tick++;
-  Serial.print("                                     tick ");
+  Serial.print("                                                    tick ");
   Serial.println(tick);
   
   // turn off leds
