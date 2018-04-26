@@ -44,6 +44,12 @@ const uint8_t echoPin_front_right = 7;
 const uint8_t trigPin_LEFT = 4;
 const uint8_t echoPin_LEFT = 5;
 
+/*const uint8_t trigPin_right = 17;
+const uint8_t echoPin_right = 16;
+
+const uint8_t trigPin_RIGHT = 15;
+const uint8_t echoPin_RIGHT = 14;
+*/
 
 /* Communication */
 const int transmit_pin = 12;    
@@ -129,15 +135,31 @@ float calculDistance(uint8_t trigPin,uint8_t echoPin){
  * Determines where to move
  */
 int objectDetected = 0; // 0 false, !0 true
+boolean searchingObject = false;
 
-int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_LEFT) {  
+int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_right, float cm_right, float cm_RIGHT) {  
   Serial.print(cm_left);
   Serial.print("  -  ");
   Serial.print(cm_front_left);
   Serial.print("  -  ");
   Serial.print(cm_front_right);
   Serial.print("  -  (debout) ");
-  Serial.println(cm_LEFT);  
+  Serial.println(cm_LEFT);
+
+ if (searchingObject == true && objectDetected == LEFT_){
+    if (cm_LEFT > safetyDistance ||  cm_left > safetyDistance){
+         Serial.println(" Tourne à droite pour retrouver l'object ");
+         return RIGHT_;
+    }
+    searchingObject = false;
+ }
+ else if (searchingObject == true && objectDetected == RIGHT_){
+    if (cm_RIGHT > safetyDistance ||  cm_right > safetyDistance){
+         Serial.println(" Tourne à gauche pour retrouver l'object ");
+         return LEFT_;
+    }
+    searchingObject = false;
+ }
 
  if (objectDetected == LEFT_) {
       
@@ -164,11 +186,11 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_L
         Serial.println("object detected LEFT");
          objectDetected = LEFT_;
      }
-     else if(cm_RIGHT < safetyDistance || cm_right < safetyDistance) {
-        /* Detected an object in right side */
+     /*else if(cm_RIGHT < safetyDistance || cm_right < safetyDistance) {
+        /* Detected an object in right side 
         Serial.println("object detected RIGHT");
          objectDetected = RIGHT_;
-     }
+     }*/
      else if(cm_front_left < safetyDistance || cm_front_right < safetyDistance) {
         /* He detects an object in front of him */
         Serial.print("object detected FRONT");
@@ -179,14 +201,19 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_L
             objectDetected = LEFT_;
             return RIGHT_;
         }
-        else if(cm_RIGHT < safetyDistance || cm_right < safetyDistance) {
-            /* There is an object on right side */
+
+        Serial.println(" - LEFT");
+        objectDetected = LEFT_;
+        searchingObject = true;
+        return RIGHT_;
+        /*else if(cm_RIGHT < safetyDistance || cm_right < safetyDistance) {
+            /* There is an object on right side 
             Serial.println(" - RIGHT");
             objectDetected = RIGHT_;
             return LEFT_;
         }
         else {
-            /* Sinon comparer les deux côtés */
+            /* Sinon comparer les deux côtés 
             if  (cm_right > cm_left){
                 Serial.println(" - LEFT");
                 objectDetected = LEFT_;
@@ -195,7 +222,7 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_L
             Serial.println(" - RIGHT");
             objectDetected = RIGHT_;
             return LEFT_;
-        }
+        }*/
      }
      Serial.println("Tout droit");
      return FORWARD_; 
@@ -211,22 +238,25 @@ int tick = 0;
 /*
  * Moves the wheels
  */
-void navigate()
-{
+void navigate(){
   int resultatExplore;
   
   float cm_front_left;  // distance of the obstacle
   float cm_front_right;
   float cm_left;
   float cm_LEFT;
+  float cm_right;
+  float cm_RIGHT;
   
   noInterrupts();
   cm_front_left = calculDistance(trigPin_front_left,echoPin_front_left);
   cm_front_right = calculDistance(trigPin_front_right,echoPin_front_right);
   cm_left = calculDistance(trigPin_left, echoPin_left);
   cm_LEFT = calculDistance(trigPin_LEFT, echoPin_LEFT);
+  /*cm_right = calculDistance(trigPin_right, echoPin_right);
+  cm_RIGHT = calculDistance(trigPin_RIGHT, echoPin_RIGHT);*/
 
-  resultatExplore = explore(cm_front_left, cm_front_right, cm_left, cm_LEFT);
+  resultatExplore = explore(cm_LEFT, cm_left, cm_front_left, cm_front_right, cm_right, cm_RIGHT);
   interrupts();
 
   tick++;
