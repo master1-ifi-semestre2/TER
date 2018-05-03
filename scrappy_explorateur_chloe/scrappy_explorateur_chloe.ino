@@ -32,24 +32,25 @@
 
 
 /* Ultrasonic sensors */
-const uint8_t trigPin_front_left = 3; // trigger signal (sends)
-const uint8_t echoPin_front_left = 2; // echo signal (receives)
+const uint8_t trigPin_LEFT = 10;
+const uint8_t echoPin_LEFT = 11;
 
-const uint8_t trigPin_left = 9;
-const uint8_t echoPin_left = 8;
+const uint8_t trigPin_left = 5;
+const uint8_t echoPin_left = 4;
 
-const uint8_t trigPin_front_right = 6;
-const uint8_t echoPin_front_right = 7;
+const uint8_t trigPin_front_left = 2; // trigger signal (sends)
+const uint8_t echoPin_front_left = 3; // echo signal (receives)
 
-const uint8_t trigPin_LEFT = 4;
-const uint8_t echoPin_LEFT = 5;
+const uint8_t trigPin_front_right = 12;
+const uint8_t echoPin_front_right = 13;
 
-/*const uint8_t trigPin_right = 17;
-const uint8_t echoPin_right = 16;
+const uint8_t trigPin_right = 7;
+const uint8_t echoPin_right = 6;
 
-const uint8_t trigPin_RIGHT = 15;
-const uint8_t echoPin_RIGHT = 14;
-*/
+const uint8_t trigPin_RIGHT = 8;
+const uint8_t echoPin_RIGHT = 9;
+
+
 
 /* Communication */
 const int transmit_pin = 12;    
@@ -66,7 +67,7 @@ Message msg;
 /* Measurements */
 //const int r = 22.5 * 1.866; // distance between the center of the robot and the sensors
 //const float teta = 30;
-const float safetyDistance = 20; // according with the speed, expressed in cm
+const float safetyDistance = 27; // according with the speed, expressed in cm
 const float robotWidth = 20; // and the height is 12 cm
 
 
@@ -81,7 +82,7 @@ const uint8_t ledPin_right = 16;
 
 /* Movement */
 volatile int currentState = FORWARD_; // initial state = forward
-const int motorSpeed = 50;
+const int motorSpeed = 110;
 
 
 // Create the motor shield object with the default I2C address
@@ -136,35 +137,48 @@ float calculDistance(uint8_t trigPin,uint8_t echoPin){
  */
 int objectDetected = 0; // 0 false, !0 true
 boolean searchingObject = false;
+int tick = 0;
 
 int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_right, float cm_right, float cm_RIGHT) {  
-  Serial.print(cm_left);
-  Serial.print("  -  ");
-  Serial.print(cm_front_left);
-  Serial.print("  -  ");
-  Serial.print(cm_front_right);
-  Serial.print("  -  (debout) ");
   Serial.println(cm_LEFT);
+  Serial.print(" - ");
+  Serial.print(cm_left);
+  Serial.print(" - ");
+  Serial.print(cm_front_left);
+  Serial.print(" - ");
+  Serial.print(cm_front_right);
+  Serial.print(" - ");
+  Serial.println(cm_right);
+  Serial.print(" - ");
+   Serial.println(cm_RIGHT);
+
+  if (tick < 3){
+    return FORWARD_; 
+  }
 
  if (searchingObject == true && objectDetected == LEFT_){
-    if (cm_LEFT > safetyDistance ||  cm_left > safetyDistance){
+    if (cm_LEFT < safetyDistance ||  cm_left < safetyDistance){
+         searchingObject = false;
+    }
+    else {
          Serial.println(" Tourne à droite pour retrouver l'object ");
          return RIGHT_;
     }
-    searchingObject = false;
  }
  else if (searchingObject == true && objectDetected == RIGHT_){
-    if (cm_RIGHT > safetyDistance ||  cm_right > safetyDistance){
+     if (cm_RIGHT < safetyDistance ||  cm_right < safetyDistance){
+         searchingObject = false;
+    }
+    else {
          Serial.println(" Tourne à gauche pour retrouver l'object ");
          return LEFT_;
     }
-    searchingObject = false;
  }
 
  if (objectDetected == LEFT_) {
       
       // Si il a déjà détecté un objet
-      if(cm_LEFT > safetyDistance && cm_left > safetyDistance/* && turn == false*/) {
+      if(cm_LEFT > safetyDistance && cm_left > safetyDistance) {
         /* Object detected in left side, and he has pass the object, then he has to turn in left */
         Serial.println("Pass the object LEFT");
         //turn = true;
@@ -177,7 +191,23 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
       } 
     Serial.println("Tout droit object detected");
     return FORWARD_; 
-  }   
+  } 
+  else if (objectDetected == RIGHT_) {
+      
+      // Si il a déjà détecté un objet
+      if(cm_RIGHT > safetyDistance && cm_right > safetyDistance) {
+        /* Object detected in left side, and he has pass the object, then he has to turn in left */
+        Serial.println("Pass the object RIGHT");
+        return RIGHT_;
+      } 
+      if (cm_RIGHT < safetyDistance - 10 ||  cm_right < safetyDistance - 10 || cm_front_right < safetyDistance || cm_front_left < safetyDistance){
+          Serial.println("Trop près de l'object ***** ou obstacle devant ***** tourne un peu a gauche");
+          return LEFT_;
+      } 
+    Serial.println("Tout droit object detected");
+    return FORWARD_; 
+  }
+    
   else {
     /* Pas d'object détecté !!*/
 
@@ -186,11 +216,11 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
         Serial.println("object detected LEFT");
          objectDetected = LEFT_;
      }
-     /*else if(cm_RIGHT < safetyDistance || cm_right < safetyDistance) {
-        /* Detected an object in right side 
+     else if(cm_RIGHT < safetyDistance || cm_right < safetyDistance) {
+        /* Detected an object in right side */
         Serial.println("object detected RIGHT");
          objectDetected = RIGHT_;
-     }*/
+     }
      else if(cm_front_left < safetyDistance || cm_front_right < safetyDistance) {
         /* He detects an object in front of him */
         Serial.print("object detected FRONT");
@@ -201,28 +231,28 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
             objectDetected = LEFT_;
             return RIGHT_;
         }
-
-        Serial.println(" - LEFT");
-        objectDetected = LEFT_;
-        searchingObject = true;
-        return RIGHT_;
-        /*else if(cm_RIGHT < safetyDistance || cm_right < safetyDistance) {
-            /* There is an object on right side 
+        else if(cm_RIGHT < safetyDistance || cm_right < safetyDistance) {
+            /* There is an object on right side */
             Serial.println(" - RIGHT");
             objectDetected = RIGHT_;
             return LEFT_;
         }
+
         else {
-            /* Sinon comparer les deux côtés 
+            /* Compare both side */
             if  (cm_right > cm_left){
                 Serial.println(" - LEFT");
                 objectDetected = LEFT_;
+                searchingObject = true;
                 return RIGHT_;
             }
-            Serial.println(" - RIGHT");
-            objectDetected = RIGHT_;
-            return LEFT_;
-        }*/
+            else {
+              Serial.println(" - RIGHT");
+              objectDetected = RIGHT_;
+              searchingObject = true;
+              return LEFT_;
+            }  
+        }       
      }
      Serial.println("Tout droit");
      return FORWARD_; 
@@ -230,10 +260,6 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
 } 
 
 
-
-
-
-int tick = 0;
 
 /*
  * Moves the wheels
@@ -253,8 +279,8 @@ void navigate(){
   cm_front_right = calculDistance(trigPin_front_right,echoPin_front_right);
   cm_left = calculDistance(trigPin_left, echoPin_left);
   cm_LEFT = calculDistance(trigPin_LEFT, echoPin_LEFT);
-  /*cm_right = calculDistance(trigPin_right, echoPin_right);
-  cm_RIGHT = calculDistance(trigPin_RIGHT, echoPin_RIGHT);*/
+  cm_right = calculDistance(trigPin_right, echoPin_right);
+  cm_RIGHT = calculDistance(trigPin_RIGHT, echoPin_RIGHT);
 
   resultatExplore = explore(cm_LEFT, cm_left, cm_front_left, cm_front_right, cm_right, cm_RIGHT);
   interrupts();
