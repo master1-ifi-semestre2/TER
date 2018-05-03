@@ -13,7 +13,10 @@
 *****************************************************************************/
 
 
+
 // CHECK TYPES IN EVERY FILE 
+
+
 
 
 #include <Wire.h>
@@ -29,24 +32,17 @@
 
 
 /* Ultrasonic sensors */
-const uint8_t trigPin_LEFT = 10;
-const uint8_t echoPin_LEFT = 11;
+const uint8_t trigPin_front_left = 3; // trigger signal (sends)
+const uint8_t echoPin_front_left = 2; // echo signal (receives)
 
-const uint8_t trigPin_left = 5;
-const uint8_t echoPin_left = 4;
+const uint8_t trigPin_left = 9;
+const uint8_t echoPin_left = 8;
 
-const uint8_t trigPin_front_left = 2; // trigger signal (sends)
-const uint8_t echoPin_front_left = 3; // echo signal (receives)
+const uint8_t trigPin_front_right = 6;
+const uint8_t echoPin_front_right = 7;
 
-const uint8_t trigPin_front_right = 12;
-const uint8_t echoPin_front_right = 13;
-
-const uint8_t trigPin_right = 7;
-const uint8_t echoPin_right = 6;
-
-const uint8_t trigPin_RIGHT = 8;
-const uint8_t echoPin_RIGHT = 9;
-
+const uint8_t trigPin_right = 4;
+const uint8_t echoPin_right = 5;
 
 
 /* Communication */
@@ -64,7 +60,7 @@ Message msg;
 /* Measurements */
 //const int r = 22.5 * 1.866; // distance between the center of the robot and the sensors
 //const float teta = 30;
-const float safetyDistance = 27; // according with the speed, expressed in cm
+const float safetyDistance = 20; // according with the speed, expressed in cm
 const float robotWidth = 20; // and the height is 12 cm
 
 
@@ -78,9 +74,8 @@ const uint8_t ledPin_back = 15;
 const uint8_t ledPin_right = 16;
 
 /* Movement */
-volatile int currentState = FORWARD_; // initial state = forward
-const int motorSpeed = 110;
-
+volatile int currentState = 0; // initial state = forward
+const int motorSpeed = 130;
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
@@ -125,163 +120,134 @@ float calculDistance(uint8_t trigPin,uint8_t echoPin){
 }
 
 
+
+
+
+
 /*
  * Determines where to move
  */
 int objectDetected = 0; // 0 false, !0 true
-boolean searchingObject = false;
-int tick = 0;
+int randomMoveTime = 0;
+bool hasTurned = false;
+int numMove = 2;
+int moveCounter = 0;
 
-int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_right, float cm_right, float cm_RIGHT) {  
-  Serial.println(cm_LEFT);
-  Serial.print(" - ");
+int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_right) {
+    
   Serial.print(cm_left);
-  Serial.print(" - ");
+  Serial.print("  -  ");
   Serial.print(cm_front_left);
-  Serial.print(" - ");
+  Serial.print("  -  ");
   Serial.print(cm_front_right);
-  Serial.print(" - ");
+  Serial.print("  -  ");
   Serial.println(cm_right);
-  Serial.print(" - ");
-   Serial.println(cm_RIGHT);
 
-  if (tick < 3){
-    return FORWARD_; 
+  if (cm_left == 0) cm_left = 3000;
+  if (cm_front_left == 0) cm_front_left = 3000;
+  if (cm_front_right == 0) cm_front_right = 3000;
+  if (cm_right == 0) cm_right = 3000;
+
+  // this is the way you would stop going around the object.... ??
+  randomMoveTime++;
+  
+  if(randomMoveTime == 50) {
+    randomMoveTime = 0;
+    objectDetected = 0;
   }
-
- if (searchingObject == true && objectDetected == LEFT_){
-    if (cm_LEFT < safetyDistance ||  cm_left < safetyDistance){
-         searchingObject = false;
-    }
-    else {
-         Serial.println(" Tourne à droite pour retrouver l'object ");
-         return RIGHT_;
-    }
- }
- else if (searchingObject == true && objectDetected == RIGHT_){
-     if (cm_RIGHT < safetyDistance ||  cm_right < safetyDistance){
-         searchingObject = false;
-    }
-    else {
-         Serial.println(" Tourne à gauche pour retrouver l'object ");
-         return LEFT_;
-    }
- }
-
- if (objectDetected == LEFT_) {
-      
-      // Si il a déjà détecté un objet
-      if(cm_LEFT > safetyDistance && cm_left > safetyDistance) {
+  
+  // if there is enough space everywhere in front then go forward
+  if ((cm_front_right > robotWidth + safetyDistance) && (cm_front_left > robotWidth + safetyDistance)) 
+  {
+    // IF IT'S NOT PARALLEL TO THE OBJECT IT HAS TO TURN A LITTLE BIT AND THEN GO AROUND... AS IT IS IT WILL JUST GO STRAIGHT SO IT WILL HIT THE OBJECT AT SOME POINT   
+    if (objectDetected) {
+      if(objectDetected == LEFT_ && cm_left > safetyDistance && turn == false) {
         /* Object detected in left side, and he has pass the object, then he has to turn in left */
         Serial.println("Pass the object LEFT");
-        //turn = true;
+        turn = true;
         return LEFT_;
-      } 
-      if (cm_LEFT < safetyDistance - 10 ||  cm_left < safetyDistance - 10 || cm_front_right < safetyDistance || cm_front_left < safetyDistance){
-          Serial.println("Trop près de l'object ***** ou obstacle devant ***** tourne un peu a droite");
-        //turn = true;
-        return RIGHT_;
-      } 
-    Serial.println("Tout droit object detected");
-    return FORWARD_; 
-  } 
-  else if (objectDetected == RIGHT_) {
-      
-      // Si il a déjà détecté un objet
-      if(cm_RIGHT > safetyDistance && cm_right > safetyDistance) {
-        /* Object detected in left side, and he has pass the object, then he has to turn in left */
+      }
+      else if (objectDetected == RIGHT_ && cm_right > safetyDistance && turn == false) {
         Serial.println("Pass the object RIGHT");
+        turn = true;
         return RIGHT_;
-      } 
-      if (cm_RIGHT < safetyDistance - 10 ||  cm_right < safetyDistance - 10 || cm_front_right < safetyDistance || cm_front_left < safetyDistance){
-          Serial.println("Trop près de l'object ***** ou obstacle devant ***** tourne un peu a gauche");
-          return LEFT_;
-      } 
-    Serial.println("Tout droit object detected");
-    return FORWARD_; 
-  }
-    
-  else {
-    /* Pas d'object détecté !!*/
-
-    if(cm_LEFT < safetyDistance || cm_left < safetyDistance) {
-        /* Detected an object in left side */
+      }      
+    }
+    else if(randomMoveTime != 0) {    // == 0 when it does the random movement... (which is not really random)
+      /* He checkes both side to see if there is an object*/
+      if (cm_left < safetyDistance) {
         Serial.println("object detected LEFT");
-         objectDetected = LEFT_;
-     }
-     else if(cm_RIGHT < safetyDistance || cm_right < safetyDistance) {
-        /* Detected an object in right side */
+        objectDetected = LEFT_;
+      }
+      else if (cm_right < safetyDistance) {
         Serial.println("object detected RIGHT");
-         objectDetected = RIGHT_;
-     }
-     else if(cm_front_left < safetyDistance || cm_front_right < safetyDistance) {
-        /* He detects an object in front of him */
-        Serial.print("object detected FRONT");
+        objectDetected = RIGHT_;
+      }     
+    } 
+    //Serial.println("↑");
+    /* There is no object or he has just faund one */
+   // hasTurned = false;
+    return FORWARD_;   
+  } 
 
-        if(cm_LEFT < safetyDistance || cm_left < safetyDistance) {
-            /* There is an object on left side */
-            Serial.println(" - LEFT");
-            objectDetected = LEFT_;
-            return RIGHT_;
-        }
-        else if(cm_RIGHT < safetyDistance || cm_right < safetyDistance) {
-            /* There is an object on right side */
-            Serial.println(" - RIGHT");
-            objectDetected = RIGHT_;
-            return LEFT_;
-        }
-
-        else {
-            /* Compare both side */
-            if  (cm_right > cm_left){
-                Serial.println(" - LEFT");
-                objectDetected = LEFT_;
-                searchingObject = true;
-                return RIGHT_;
-            }
-            else {
-              Serial.println(" - RIGHT");
-              objectDetected = RIGHT_;
-              searchingObject = true;
-              return LEFT_;
-            }  
-        }       
-     }
-     Serial.println("Tout droit");
-     return FORWARD_; 
+  
+  // if there is not enough space to go forward, but there's enough to turn then turn right or left (where there is more space)
+  else if (cm_front_left > robotWidth || cm_front_right > robotWidth) 
+  {
+    if (cm_left > cm_right) {
+      //Serial.println("←");
+      Serial.println("object detected FRONT -> side RIGHT");
+      objectDetected = RIGHT_;
+      return LEFT_;
+    }
+    else {
+      //Serial.println("➝");
+      Serial.println("object detected FRONT -> side LEFT");
+      objectDetected = LEFT_;
+      return RIGHT_;
+    }   
   }
-} 
+  // if there's not enough space anywhere then go backward
+  else {
+    //Serial.println("↓");
+    return BACKWARD_;
+  }
+}
+
+
+
+
+
+
 
 
 
 /*
  * Moves the wheels
  */
-void navigate(){
+void navigate()
+{
   int resultatExplore;
   
   float cm_front_left;  // distance of the obstacle
   float cm_front_right;
   float cm_left;
-  float cm_LEFT;
   float cm_right;
-  float cm_RIGHT;
   
   noInterrupts();
   cm_front_left = calculDistance(trigPin_front_left,echoPin_front_left);
   cm_front_right = calculDistance(trigPin_front_right,echoPin_front_right);
   cm_left = calculDistance(trigPin_left, echoPin_left);
-  cm_LEFT = calculDistance(trigPin_LEFT, echoPin_LEFT);
   cm_right = calculDistance(trigPin_right, echoPin_right);
-  cm_RIGHT = calculDistance(trigPin_RIGHT, echoPin_RIGHT);
 
-  resultatExplore = explore(cm_LEFT, cm_left, cm_front_left, cm_front_right, cm_right, cm_RIGHT);
+  resultatExplore=explore(cm_front_left, cm_front_right, cm_left, cm_right);
   interrupts();
+   
+  // if it turns then don't stop turning until it finds free space in front of it
+  if ((currentState == 1 || currentState == -1) && (resultatExplore == 1 || resultatExplore == -1)) {
+    resultatExplore = currentState;
+  }
 
-  tick++;
-  Serial.print("                                                    tick ");
-  Serial.println(tick);
-  
   // turn off leds
   digitalWrite(ledPin_left, LOW);
   digitalWrite(ledPin_back, LOW);
@@ -293,45 +259,45 @@ void navigate(){
   motorLeft->run(RELEASE);
 
   // move forward  
-  if(resultatExplore == FORWARD_) { 
-    //Serial.println("Marche avant");
+  if(resultatExplore == 0) { 
+    Serial.println("Marche avant");
     motorRight->run(FORWARD);
     motorLeft->run(FORWARD);
 
-    msg.value = FORWARD_; 
+    msg.value = 0; 
   }
   // move backward
-  else if(resultatExplore == BACKWARD_) {
-    //Serial.println("Marche arriere");
+  else if(resultatExplore == 2) {
+    Serial.println("Marche arriere");
     motorRight->run(BACKWARD);
     motorLeft->run(BACKWARD);
 
     // turn on backward led
     digitalWrite(ledPin_back, HIGH);
 
-    msg.value = BACKWARD_;
+    msg.value = 2;
   }
   // move left
-  else if(resultatExplore == LEFT_) { 
-    //Serial.println("gauche"); 
-    motorRight->run(RELEASE);
+  else if(resultatExplore == -1) { 
+    Serial.println("gauche"); 
+    motorRight->run(BACKWARD);
     motorLeft->run(FORWARD);
 
     // turn on left led
     digitalWrite(ledPin_left, HIGH);
 
-    msg.value = LEFT_;
+    msg.value = -1;
   }
   // move right
-  else if(resultatExplore == RIGHT_) {
-    //Serial.println("droite");
+  else if(resultatExplore == 1) {
+    Serial.println("droite");
     motorRight->run(FORWARD);
-    motorLeft->run(RELEASE);
+    motorLeft->run(BACKWARD);
 
     // turn on right led
     digitalWrite(ledPin_right, HIGH);
 
-    msg.value = RIGHT_;
+    msg.value = 1;
   }
 }
 
