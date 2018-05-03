@@ -161,43 +161,17 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_r
   {
     // IF IT'S NOT PARALLEL TO THE OBJECT IT HAS TO TURN A LITTLE BIT AND THEN GO AROUND... AS IT IS IT WILL JUST GO STRAIGHT SO IT WILL HIT THE OBJECT AT SOME POINT   
     if (objectDetected) {
-      if(objectDetected == LEFT_) {
+      if(objectDetected == LEFT_ && cm_left > safetyDistance && turn == false) {
         /* Object detected in left side, and he has pass the object, then he has to turn in left */
-        if(cm_left > safetyDistance) {
-          if(!hasTurned) {
-            Serial.println("Pass the object LEFT - LEFT - !hasturned");
-            hasTurned = true;
-            return LEFT_;
-          }
-          else{
-              if(moveCounter < numMove/2) {
-                moveCounter++;
-                Serial.println("Pass the object LEFT - LEFT - hasturned");
-                return LEFT_;    
-              } else if(moveCounter < numMove) {
-                moveCounter++;
-                Serial.println("Pass the object LEFT - FORWARD");
-                return FORWARD_;
-              } else {
-                moveCounter = 0;  
-                Serial.println("Pass the object LEFT - FORWARD");
-                return FORWARD_;
-              }
-          }
-        }
-        else {
-          hasTurned = false;
-          moveCounter = 0;
-          Serial.println("PASSING the object LEFT - FORWARD");  
-          return FORWARD_;
-        }
-        
-      } 
-     /* else if (objectDetected == RIGHT_ && cm_right > safetyDistance && hasTurned == false) {
+        Serial.println("Pass the object LEFT");
+        turn = true;
+        return LEFT_;
+      }
+      else if (objectDetected == RIGHT_ && cm_right > safetyDistance && turn == false) {
         Serial.println("Pass the object RIGHT");
-        hasTurned = true;
+        turn = true;
         return RIGHT_;
-      }*/      
+      }      
     }
     else if(randomMoveTime != 0) {    // == 0 when it does the random movement... (which is not really random)
       /* He checkes both side to see if there is an object*/
