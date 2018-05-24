@@ -11,10 +11,6 @@
       
 *****************************************************************************/
 
-
-// CHECK TYPES IN EVERY FILE 
-
-
 #include <Wire.h>
 #include <Adafruit_MotorShield.h>
 #include <Adafruit_PWMServoDriver.h>
@@ -47,9 +43,8 @@ const uint8_t trigPin_RIGHT = 8;
 const uint8_t echoPin_RIGHT = 9;
 
 
-
 /* Communication */
-const int transmit_pin = 12;    
+const int transmit_pin = 17;    
 const uint8_t myId = 0; // boss
 
 typedef struct {
@@ -61,8 +56,6 @@ Message msg;
 
 
 /* Measurements */
-//const int r = 22.5 * 1.866; // distance between the center of the robot and the sensors
-//const float teta = 30;
 const float safetyDistance = 27; // according with the speed, expressed in cm
 const float robotWidth = 20; // and the height is 12 cm
 
@@ -75,6 +68,7 @@ const float robotWidth = 20; // and the height is 12 cm
 const uint8_t ledPin_left = 14;
 const uint8_t ledPin_back = 15;
 const uint8_t ledPin_right = 16;
+
 
 /* Movement */
 volatile int currentState = FORWARD_; // initial state = forward
@@ -132,7 +126,7 @@ boolean searchingObject = false;
 int tick = 0;
 
 int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_right, float cm_right, float cm_RIGHT) {  
-  Serial.println(cm_LEFT);
+  /*Serial.println(cm_LEFT);
   Serial.print(" - ");
   Serial.print(cm_left);
   Serial.print(" - ");
@@ -143,7 +137,7 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
   Serial.println(cm_right);
   Serial.print(" - ");
    Serial.println(cm_RIGHT);
-
+*/
   if (tick < 3){
     return FORWARD_; 
   }
@@ -153,7 +147,7 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
          searchingObject = false;
     }
     else {
-         Serial.println(" Tourne à droite pour retrouver l'object ");
+        // Serial.println(" Tourne à droite pour retrouver l'object ");
          return RIGHT_;
     }
  }
@@ -162,7 +156,7 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
          searchingObject = false;
     }
     else {
-         Serial.println(" Tourne à gauche pour retrouver l'object ");
+        // Serial.println(" Tourne à gauche pour retrouver l'object ");
          return LEFT_;
     }
  }
@@ -172,16 +166,16 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
       // Si il a déjà détecté un objet
       if(cm_LEFT > safetyDistance && cm_left > safetyDistance) {
         /* Object detected in left side, and he has pass the object, then he has to turn in left */
-        Serial.println("Pass the object LEFT");
+//Serial.println("Pass the object LEFT");
         //turn = true;
         return LEFT_;
       } 
       if (cm_LEFT < safetyDistance - 10 ||  cm_left < safetyDistance - 10 || cm_front_right < safetyDistance || cm_front_left < safetyDistance){
-          Serial.println("Trop près de l'object ***** ou obstacle devant ***** tourne un peu a droite");
+      //    Serial.println("Trop près de l'object ***** ou obstacle devant ***** tourne un peu a droite");
         //turn = true;
         return RIGHT_;
       } 
-    Serial.println("Tout droit object detected");
+   // Serial.println("Tout droit object detected");
     return FORWARD_; 
   } 
   else if (objectDetected == RIGHT_) {
@@ -189,14 +183,14 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
       // Si il a déjà détecté un objet
       if(cm_RIGHT > safetyDistance && cm_right > safetyDistance) {
         /* Object detected in left side, and he has pass the object, then he has to turn in left */
-        Serial.println("Pass the object RIGHT");
+    //    Serial.println("Pass the object RIGHT");
         return RIGHT_;
       } 
       if (cm_RIGHT < safetyDistance - 10 ||  cm_right < safetyDistance - 10 || cm_front_right < safetyDistance || cm_front_left < safetyDistance){
-          Serial.println("Trop près de l'object ***** ou obstacle devant ***** tourne un peu a gauche");
+      //    Serial.println("Trop près de l'object ***** ou obstacle devant ***** tourne un peu a gauche");
           return LEFT_;
       } 
-    Serial.println("Tout droit object detected");
+    //Serial.println("Tout droit object detected");
     return FORWARD_; 
   }
     
@@ -205,27 +199,27 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
 
     if(cm_LEFT < safetyDistance || cm_left < safetyDistance) {
         /* Detected an object in left side */
-        Serial.println("object detected LEFT");
+      //  Serial.println("object detected LEFT");
          objectDetected = LEFT_;
      }
      else if(cm_RIGHT < safetyDistance || cm_right < safetyDistance) {
         /* Detected an object in right side */
-        Serial.println("object detected RIGHT");
+        //Serial.println("object detected RIGHT");
          objectDetected = RIGHT_;
      }
      else if(cm_front_left < safetyDistance || cm_front_right < safetyDistance) {
         /* He detects an object in front of him */
-        Serial.print("object detected FRONT");
+        //Serial.print("object detected FRONT");
 
         if(cm_LEFT < safetyDistance || cm_left < safetyDistance) {
             /* There is an object on left side */
-            Serial.println(" - LEFT");
+         //   Serial.println(" - LEFT");
             objectDetected = LEFT_;
             return RIGHT_;
         }
         else if(cm_RIGHT < safetyDistance || cm_right < safetyDistance) {
             /* There is an object on right side */
-            Serial.println(" - RIGHT");
+          //  Serial.println(" - RIGHT");
             objectDetected = RIGHT_;
             return LEFT_;
         }
@@ -233,20 +227,20 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
         else {
             /* Compare both side */
             if  (cm_right > cm_left){
-                Serial.println(" - LEFT");
+              //  Serial.println(" - LEFT");
                 objectDetected = LEFT_;
                 searchingObject = true;
                 return RIGHT_;
             }
             else {
-              Serial.println(" - RIGHT");
+              //Serial.println(" - RIGHT");
               objectDetected = RIGHT_;
               searchingObject = true;
               return LEFT_;
             }  
         }       
      }
-     Serial.println("Tout droit");
+     //Serial.println("Tout droit");
      return FORWARD_; 
   }
 } 
@@ -278,8 +272,8 @@ void navigate(){
   interrupts();
 
   tick++;
-  Serial.print("                                                    tick ");
-  Serial.println(tick);
+//  Serial.print("                                                    tick ");
+//  Serial.println(tick);
   
   // turn off leds
   digitalWrite(ledPin_left, LOW);
@@ -293,7 +287,7 @@ void navigate(){
 
   // move forward  
   if(resultatExplore == FORWARD_) { 
-    //Serial.println("Marche avant");
+    Serial.println("avant");
     motorRight->run(FORWARD);
     motorLeft->run(FORWARD);
 
@@ -301,7 +295,7 @@ void navigate(){
   }
   // move backward
   else if(resultatExplore == BACKWARD_) {
-    //Serial.println("Marche arriere");
+    Serial.println("arriere");
     motorRight->run(BACKWARD);
     motorLeft->run(BACKWARD);
 
@@ -312,7 +306,7 @@ void navigate(){
   }
   // move left
   else if(resultatExplore == LEFT_) { 
-    //Serial.println("gauche"); 
+    Serial.println("gauche"); 
     motorRight->run(RELEASE);
     motorLeft->run(FORWARD);
 
@@ -323,7 +317,7 @@ void navigate(){
   }
   // move right
   else if(resultatExplore == RIGHT_) {
-    //Serial.println("droite");
+    Serial.println("droite");
     motorRight->run(FORWARD);
     motorLeft->run(RELEASE);
 
@@ -342,8 +336,11 @@ void navigate(){
 void send_message() {
   vw_send((byte*) &msg, sizeof(msg));
   vw_wait_tx(); // On attend la fin de l'envoi
-  Serial.println("Message send !");
-  delay(300);
+  Serial.print("Message send: ");
+  Serial.println(msg.value);
+  Serial.println("");
+  
+  delay(50);
 }
  
 
@@ -391,5 +388,5 @@ void setup() {
 void loop()
 {
   navigate();
-  //send_message();
+  send_message();
 }
