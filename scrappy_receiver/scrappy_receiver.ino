@@ -59,7 +59,7 @@ const uint8_t ledPin_right = 16;
 */
 
 /* Movement */
-const int motorSpeed = 70;
+const int motorSpeed = 110;
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 

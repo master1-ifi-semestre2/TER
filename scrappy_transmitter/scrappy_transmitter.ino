@@ -17,27 +17,35 @@
 #include <TimerOne.h>
 #include <VirtualWire.h>
 
+
 #define FORWARD_ 0
 #define BACKWARD_ 2
 #define LEFT_ -1
 #define RIGHT_ 1
 
+
 /* Ultrasonic sensors */
-const uint8_t trigPin_front_left = 3; // trigger signal (sends)
-const uint8_t echoPin_front_left = 2; // echo signal (receives)
+const uint8_t trigPin_LEFT = 10;
+const uint8_t echoPin_LEFT = 11;
 
-const uint8_t trigPin_left = 9;
-const uint8_t echoPin_left = 8;
+const uint8_t trigPin_left = 5;
+const uint8_t echoPin_left = 4;
 
-const uint8_t trigPin_front_right = 6;
-const uint8_t echoPin_front_right = 7;
+const uint8_t trigPin_front_left = 2; // trigger signal (sends)
+const uint8_t echoPin_front_left = 3; // echo signal (receives)
 
-const uint8_t trigPin_right = 4;
-const uint8_t echoPin_right = 5;
+const uint8_t trigPin_front_right = 12;
+const uint8_t echoPin_front_right = 13;
+
+const uint8_t trigPin_right = 7;
+const uint8_t echoPin_right = 6;
+
+const uint8_t trigPin_RIGHT = 8;
+const uint8_t echoPin_RIGHT = 9;
 
 
 /* Communication */
-const int transmit_pin = 12;    
+const int transmit_pin = 17;    
 const uint8_t myId = 0; // boss
 
 typedef struct {
@@ -49,7 +57,7 @@ Message msg;
 
 
 /* Measurements */
-const float safetyDistance = 10; // according with the speed, expressed in cm
+const float safetyDistance = 27; // according with the speed, expressed in cm
 const float robotWidth = 20; // and the height is 12 cm
 
 
@@ -62,9 +70,12 @@ const uint8_t ledPin_left = 14;
 const uint8_t ledPin_back = 15;
 const uint8_t ledPin_right = 16;
 
+
 /* Movement */
-volatile int currentState = FORWARD_; // initial state = forward 
-const int motorSpeed = 100;
+volatile int currentState = FORWARD_; // initial state = forward
+const int motorSpeed = 130;
+
+
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
@@ -283,5 +294,5 @@ void setup() {
 void loop()
 {
   navigate();
-  //send_message();
+  send_message();
 }
