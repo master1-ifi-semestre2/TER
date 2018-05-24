@@ -74,6 +74,13 @@ const uint8_t ledPin_right = 16;
 volatile int currentState = FORWARD_; // initial state = forward
 const int motorSpeed = 110;
 
+/*
+ * Determines where to move
+ */
+int objectDetected = 0; // 0 false, !0 true
+boolean searchingObject = false;
+int tick = 0;
+int randomDir = FORWARD_;
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
@@ -85,6 +92,12 @@ Adafruit_DCMotor *motorRight = AFMS.getMotor(1);
 Adafruit_DCMotor *motorLeft = AFMS.getMotor(2);
 
 
+void initValue(){
+  currentState = FORWARD_;
+  objectDetected = 0;
+  searchingObject = false;
+  tick = 0;
+}
 
 /*
  * Calculates the distance with the information obtained from the sensors  
@@ -117,32 +130,32 @@ float calculDistance(uint8_t trigPin,uint8_t echoPin){
   return cm;
 }
 
-
-/*
- * Determines where to move
- */
-int objectDetected = 0; // 0 false, !0 true
-boolean searchingObject = false;
-int tick = 0;
-
 int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_right, float cm_right, float cm_RIGHT) {  
-  /*Serial.println(cm_LEFT);
+  Serial.print(cm_LEFT);
   Serial.print(" - ");
   Serial.print(cm_left);
   Serial.print(" - ");
-  Serial.print(cm_front_left);
+  //Serial.print(cm_front_left);
   Serial.print(" - ");
-  Serial.print(cm_front_right);
+  //Serial.print(cm_front_right);
   Serial.print(" - ");
-  Serial.println(cm_right);
+  Serial.print(cm_right);
   Serial.print(" - ");
    Serial.println(cm_RIGHT);
-*/
+   
   if (tick < 3){
-    return FORWARD_; 
+    return randomDir; 
   }
 
+  if (tick > 200){
+      Serial.println("random");
+      randomDir = objectDetected;
+      initValue();
+      return -randomDir;
+  }
+  
  if (searchingObject == true && objectDetected == LEFT_){
+    /* Tourner jusqu'à être parallèle à l'objet */
     if (cm_LEFT < safetyDistance ||  cm_left < safetyDistance){
          searchingObject = false;
     }
@@ -152,6 +165,7 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
     }
  }
  else if (searchingObject == true && objectDetected == RIGHT_){
+    /* Tourner jusqu'à être parallèle à l'objet */
      if (cm_RIGHT < safetyDistance ||  cm_right < safetyDistance){
          searchingObject = false;
     }
@@ -162,20 +176,14 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
  }
 
  if (objectDetected == LEFT_) {
-      
       // Si il a déjà détecté un objet
       if(cm_LEFT > safetyDistance && cm_left > safetyDistance) {
         /* Object detected in left side, and he has pass the object, then he has to turn in left */
-//Serial.println("Pass the object LEFT");
-        //turn = true;
         return LEFT_;
       } 
       if (cm_LEFT < safetyDistance - 10 ||  cm_left < safetyDistance - 10 || cm_front_right < safetyDistance || cm_front_left < safetyDistance){
-      //    Serial.println("Trop près de l'object ***** ou obstacle devant ***** tourne un peu a droite");
-        //turn = true;
         return RIGHT_;
       } 
-   // Serial.println("Tout droit object detected");
     return FORWARD_; 
   } 
   else if (objectDetected == RIGHT_) {
@@ -183,43 +191,34 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
       // Si il a déjà détecté un objet
       if(cm_RIGHT > safetyDistance && cm_right > safetyDistance) {
         /* Object detected in left side, and he has pass the object, then he has to turn in left */
-    //    Serial.println("Pass the object RIGHT");
         return RIGHT_;
       } 
       if (cm_RIGHT < safetyDistance - 10 ||  cm_right < safetyDistance - 10 || cm_front_right < safetyDistance || cm_front_left < safetyDistance){
-      //    Serial.println("Trop près de l'object ***** ou obstacle devant ***** tourne un peu a gauche");
           return LEFT_;
       } 
-    //Serial.println("Tout droit object detected");
     return FORWARD_; 
   }
-    
   else {
     /* Pas d'object détecté !!*/
 
     if(cm_LEFT < safetyDistance || cm_left < safetyDistance) {
         /* Detected an object in left side */
-      //  Serial.println("object detected LEFT");
          objectDetected = LEFT_;
      }
      else if(cm_RIGHT < safetyDistance || cm_right < safetyDistance) {
         /* Detected an object in right side */
-        //Serial.println("object detected RIGHT");
          objectDetected = RIGHT_;
      }
      else if(cm_front_left < safetyDistance || cm_front_right < safetyDistance) {
         /* He detects an object in front of him */
-        //Serial.print("object detected FRONT");
-
+        
         if(cm_LEFT < safetyDistance || cm_left < safetyDistance) {
             /* There is an object on left side */
-         //   Serial.println(" - LEFT");
             objectDetected = LEFT_;
             return RIGHT_;
         }
         else if(cm_RIGHT < safetyDistance || cm_right < safetyDistance) {
             /* There is an object on right side */
-          //  Serial.println(" - RIGHT");
             objectDetected = RIGHT_;
             return LEFT_;
         }
@@ -227,7 +226,6 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
         else {
             /* Compare both side */
             if  (cm_right > cm_left){
-              //  Serial.println(" - LEFT");
                 objectDetected = LEFT_;
                 searchingObject = true;
                 return RIGHT_;
@@ -240,7 +238,6 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
             }  
         }       
      }
-     //Serial.println("Tout droit");
      return FORWARD_; 
   }
 } 
@@ -272,9 +269,7 @@ void navigate(){
   interrupts();
 
   tick++;
-//  Serial.print("                                                    tick ");
-//  Serial.println(tick);
-  
+    
   // turn off leds
   digitalWrite(ledPin_left, LOW);
   digitalWrite(ledPin_back, LOW);
@@ -287,7 +282,8 @@ void navigate(){
 
   // move forward  
   if(resultatExplore == FORWARD_) { 
-    Serial.println("avant");
+    Serial.print("avant  ");
+    Serial.println(tick);
     motorRight->run(FORWARD);
     motorLeft->run(FORWARD);
 
@@ -295,7 +291,8 @@ void navigate(){
   }
   // move backward
   else if(resultatExplore == BACKWARD_) {
-    Serial.println("arriere");
+    Serial.print("arriere  ");
+    Serial.println(tick);
     motorRight->run(BACKWARD);
     motorLeft->run(BACKWARD);
 
@@ -306,7 +303,8 @@ void navigate(){
   }
   // move left
   else if(resultatExplore == LEFT_) { 
-    Serial.println("gauche"); 
+    Serial.print("gauche  ");
+    Serial.println(tick); 
     motorRight->run(RELEASE);
     motorLeft->run(FORWARD);
 
@@ -317,7 +315,8 @@ void navigate(){
   }
   // move right
   else if(resultatExplore == RIGHT_) {
-    Serial.println("droite");
+    Serial.print("droite  ");
+    Serial.println(tick);
     motorRight->run(FORWARD);
     motorLeft->run(RELEASE);
 
@@ -388,5 +387,5 @@ void setup() {
 void loop()
 {
   navigate();
-  send_message();
+  //send_message();
 }
