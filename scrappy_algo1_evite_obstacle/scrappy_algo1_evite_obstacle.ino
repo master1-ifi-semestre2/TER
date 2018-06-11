@@ -78,8 +78,8 @@ Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 // Adafruit_MotorShield AFMS = Adafruit_MotorShield(0x61); 
 
 // Motor 1 -> right Motor 2 -> left
-Adafruit_DCMotor *motorRight = AFMS.getMotor(1);
-Adafruit_DCMotor *motorLeft = AFMS.getMotor(2);
+Adafruit_DCMotor *motorRight = AFMS.getMotor(3);
+Adafruit_DCMotor *motorLeft = AFMS.getMotor(4);
 
 
 
