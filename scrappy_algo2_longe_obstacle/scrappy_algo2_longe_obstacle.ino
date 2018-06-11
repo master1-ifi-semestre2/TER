@@ -1,4 +1,4 @@
-/****************************************************************************
+²²/****************************************************************************
    Sonar Robot
 
    Authors:  
@@ -24,22 +24,12 @@
 
 
 /* Ultrasonic sensors */
-const uint8_t trigPin_LEFT = 10;
-const uint8_t echoPin_LEFT = 11;
-
-const uint8_t trigPin_left = 5;
+const uint8_t trigPin = 8;  // trigger signal (sends)
+const uint8_t echoPin_LEFT = 11; // echo signal (receives)
 const uint8_t echoPin_left = 4;
-
-const uint8_t trigPin_front_left = 2; // trigger signal (sends)
-const uint8_t echoPin_front_left = 3; // echo signal (receives)
-
-const uint8_t trigPin_front_right = 12;
+const uint8_t echoPin_front_left = 3; 
 const uint8_t echoPin_front_right = 13;
-
-const uint8_t trigPin_right = 7;
 const uint8_t echoPin_right = 6;
-
-const uint8_t trigPin_RIGHT = 8;
 const uint8_t echoPin_RIGHT = 9;
 
 
@@ -102,7 +92,7 @@ void initValue(){
 /*
  * Calculates the distance with the information obtained from the sensors  
  */
-float calculDistance(uint8_t trigPin,uint8_t echoPin){
+float calculDistance(uint8_t echoPin){
   uint32_t duration; // duration of the round trip
   float cm;  // distance of the obstacle
 
@@ -258,12 +248,12 @@ void navigate(){
   float cm_RIGHT;
   
   noInterrupts();
-  cm_front_left = calculDistance(trigPin_front_left,echoPin_front_left);
-  cm_front_right = calculDistance(trigPin_front_right,echoPin_front_right);
-  cm_left = calculDistance(trigPin_left, echoPin_left);
-  cm_LEFT = calculDistance(trigPin_LEFT, echoPin_LEFT);
-  cm_right = calculDistance(trigPin_right, echoPin_right);
-  cm_RIGHT = calculDistance(trigPin_RIGHT, echoPin_RIGHT);
+  cm_front_left = calculDistance(echoPin_front_left);
+  cm_front_right = calculDistance(echoPin_front_right);
+  cm_left = calculDistance(echoPin_left);
+  cm_LEFT = calculDistance(echoPin_LEFT);
+  cm_right = calculDistance(echoPin_right);
+  cm_RIGHT = calculDistance(echoPin_RIGHT);
 
   resultatExplore = explore(cm_LEFT, cm_left, cm_front_left, cm_front_right, cm_right, cm_RIGHT);
   interrupts();
