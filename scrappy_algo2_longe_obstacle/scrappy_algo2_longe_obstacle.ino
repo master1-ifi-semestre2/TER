@@ -1,4 +1,4 @@
-²²/****************************************************************************
+/****************************************************************************
    Sonar Robot
 
    Authors:  
@@ -23,18 +23,24 @@
 #define RIGHT_ 1
 
 
-/* Ultrasonic sensors */
-const uint8_t trigPin = 8;  // trigger signal (sends)
-const uint8_t echoPin_LEFT = 11; // echo signal (receives)
-const uint8_t echoPin_left = 4;
-const uint8_t echoPin_front_left = 3; 
-const uint8_t echoPin_front_right = 13;
-const uint8_t echoPin_right = 6;
-const uint8_t echoPin_RIGHT = 9;
+/* Ultrasonic sensors */      
+const uint8_t echoPin_RIGHT = 2;  // echo signal (receives)
+const uint8_t echoPin_right = 3;
+const uint8_t echoPin_front_right = 4;
+const uint8_t echoPin_front_left = 5; 
+const uint8_t echoPin_left = 6;
+const uint8_t echoPin_LEFT = 7; 
+
+const uint8_t trigPin_RIGHT = 8;  // trigger signal (sends)
+const uint8_t trigPin_right = 9;
+const uint8_t trigPin_front_right = 10;
+const uint8_t trigPin_front_left = 11; 
+const uint8_t trigPin_left = 12;
+const uint8_t trigPin_LEFT = 13;
 
 
 /* Communication */
-const int transmit_pin = 17;    
+const int transmit_pin = 14;    
 const uint8_t myId = 0; // boss
 
 typedef struct {
@@ -46,8 +52,8 @@ Message msg;
 
 
 /* Measurements */
-const float safetyDistance = 27; // according with the speed, expressed in cm
-const float robotWidth = 20; // and the height is 12 cm
+const float safetyDistance = 20; // according with the speed, expressed in cm
+const float robotWidth = 22; // and the height is 12 cm
 
 
 /* LEDs
@@ -62,7 +68,7 @@ const uint8_t ledPin_right = 16;
 
 /* Movement */
 volatile int currentState = FORWARD_; // initial state = forward
-const int motorSpeed = 110;
+const int motorSpeed = 200;
 
 /*
  * Determines where to move
@@ -92,7 +98,7 @@ void initValue(){
 /*
  * Calculates the distance with the information obtained from the sensors  
  */
-float calculDistance(uint8_t echoPin){
+float calculDistance(uint8_t trigPin, uint8_t echoPin){
   uint32_t duration; // duration of the round trip
   float cm;  // distance of the obstacle
 
@@ -248,12 +254,12 @@ void navigate(){
   float cm_RIGHT;
   
   noInterrupts();
-  cm_front_left = calculDistance(echoPin_front_left);
-  cm_front_right = calculDistance(echoPin_front_right);
-  cm_left = calculDistance(echoPin_left);
-  cm_LEFT = calculDistance(echoPin_LEFT);
-  cm_right = calculDistance(echoPin_right);
-  cm_RIGHT = calculDistance(echoPin_RIGHT);
+  cm_front_left = calculDistance(trigPin_front_left, echoPin_front_left);
+  cm_front_right = calculDistance(trigPin_front_right, echoPin_front_right);
+  cm_left = calculDistance(trigPin_left, echoPin_left);
+  cm_LEFT = calculDistance(trigPin_LEFT, echoPin_LEFT);
+  cm_right = calculDistance(trigPin_right, echoPin_right);
+  cm_RIGHT = calculDistance(trigPin_RIGHT, echoPin_RIGHT);
 
   resultatExplore = explore(cm_LEFT, cm_left, cm_front_left, cm_front_right, cm_right, cm_RIGHT);
   interrupts();
@@ -261,10 +267,10 @@ void navigate(){
   tick++;
     
   // turn off leds
-  digitalWrite(ledPin_left, LOW);
+  /*digitalWrite(ledPin_left, LOW);
   digitalWrite(ledPin_back, LOW);
   digitalWrite(ledPin_right, LOW);
-  delay(100);
+  delay(100);*/
   
   currentState = resultatExplore;
   motorRight->run(RELEASE);
