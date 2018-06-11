@@ -1,4 +1,3 @@
-
 /****************************************************************************
    Sonar Robot
 
@@ -11,12 +10,6 @@
    Permissions: MIT licence
       
 *****************************************************************************/
-
-/*
- *  VOIR SI ON CHANGE LA LIBRAIRIE DE COMMUNICATION OU PAS
- *
- */
-
 
 #include <Wire.h>
 #include <Adafruit_MotorShield.h>
@@ -44,25 +37,15 @@ byte msgSize = sizeof(msg);
 
 
 /* Measurements */
-const float safetyDistance = 10; // according with the speed, expressed in cm
+const float safetyDistance = 27; // according with the speed, expressed in cm
 const float robotWidth = 20; // and the height is 12 cm
 
 
-/* LEDs
- * long side : pin
- * short side : ground
- * resistor : 100 Ohm
- */
-/*const uint8_t ledPin_left = 14;
-const uint8_t ledPin_back = 15;
-const uint8_t ledPin_right = 16;
-*/
-
 /* Movement */
-const int motorSpeed = 110;
+const int motorSpeed = 200;
 
 // Create the motor shield object with the default I2C address
-Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
+Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 // Or, create it with a different I2C address (say for stacking)
 // Adafruit_MotorShield AFMS = Adafruit_MotorShield(0x61); 
 
@@ -71,51 +54,38 @@ Adafruit_DCMotor *motorRight = AFMS.getMotor(1);
 Adafruit_DCMotor *motorLeft = AFMS.getMotor(2);
 
 
-
-
 /*
  * Moves the wheels
  */
 void navigate(){
   int moveDir = msg.value;
-  
-  motorRight->run(RELEASE);
-  motorLeft->run(RELEASE);
 
   // move forward  
   if(moveDir == FORWARD_) { 
-    Serial.println("avant");
+    Serial.print("avant  ");
     motorRight->run(FORWARD);
     motorLeft->run(FORWARD);
   }
   // move backward
   else if(moveDir == BACKWARD_) {
-    Serial.println("arriere");
+    Serial.print("arriere  ");
     motorRight->run(BACKWARD);
     motorLeft->run(BACKWARD);
-
-    // turn on backward led
-    //digitalWrite(ledPin_back, HIGH);
   }
   // move left
   else if(moveDir == LEFT_) { 
-    Serial.println("gauche"); 
+    Serial.print("gauche  ");
     motorRight->run(RELEASE);
     motorLeft->run(FORWARD);
-
-    // turn on left led
-    //digitalWrite(ledPin_left, HIGH);
   }
   // move right
   else if(moveDir == RIGHT_) {
-    Serial.println("droite");
+    Serial.print("droite  ");
     motorRight->run(FORWARD);
     motorLeft->run(RELEASE);
-
-    // turn on right led
-    //digitalWrite(ledPin_right, HIGH);
   }
 }
+
  
 
 /*
@@ -126,14 +96,14 @@ void setup() {
   Serial.begin(9600);
   AFMS.begin();  // create with the default frequency 1.6KHz
   
-// Setup the receiver for communication
+  // Setup the receiver for communication
   vw_set_rx_pin(receive_pin);
   vw_setup(2000); 
   vw_rx_start(); 
 
   // Set initial message
   msg.id = myId;
-  msg.value = 0;
+  msg.value = FORWARD_;
 
   // Right wheel
   // Set the speed to start, from 0 (off) to 255 (max speed)
@@ -148,11 +118,6 @@ void setup() {
   motorLeft->run(FORWARD);
   // turn on motor
   motorLeft->run(RELEASE);
-
-  // setup leds
-  //pinMode(ledPin_left, OUTPUT);
-  //pinMode(ledPin_back, OUTPUT);
-  //pinMode(ledPin_right, OUTPUT);
 }
 
 
@@ -161,15 +126,15 @@ void setup() {
  */
 void loop()
 {
-    // check if a message has been received and stores it in the corresponding structure
-    if (vw_get_message((byte *) &msg, &msgSize))// && formationMode) // Non-blocking
-    {
-      Serial.println(""); 
-      Serial.print("Id: ");
-      Serial.print(msg.id);
-      Serial.print("  Value: ");
-      Serial.println(msg.value); 
-    }
+  // check if a message has been received and stores it in the corresponding structure
+  if (vw_get_message((byte *) &msg, &msgSize))// && formationMode) // Non-blocking
+  {
+    Serial.println(""); 
+    Serial.print("Id: ");
+    Serial.print(msg.id);
+    Serial.print("  Value: ");
+    Serial.println(msg.value); 
+  }
 
-    navigate();
+  navigate();
 }
