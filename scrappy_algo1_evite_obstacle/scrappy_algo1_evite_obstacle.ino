@@ -24,14 +24,20 @@
 #define RIGHT_ 1
 
 
-/* Ultrasonic sensors */
-const uint8_t trigPin = 8;        // trigger signal (sends)
+/* Ultrasonic sensors */      
 const uint8_t echoPin_RIGHT = 2;  // echo signal (receives)
 const uint8_t echoPin_right = 3;
 const uint8_t echoPin_front_right = 4;
 const uint8_t echoPin_front_left = 5; 
 const uint8_t echoPin_left = 6;
 const uint8_t echoPin_LEFT = 7; 
+
+const uint8_t trigPin_RIGHT = 8;  // trigger signal (sends)
+const uint8_t trigPin_right = 9;
+const uint8_t trigPin_front_right = 10;
+const uint8_t trigPin_front_left = 11; 
+const uint8_t trigPin_left = 12;
+const uint8_t trigPin_LEFT = 13;
 
 /* Communication */
 const int transmit_pin = 17;    
@@ -80,7 +86,7 @@ Adafruit_DCMotor *motorLeft = AFMS.getMotor(2);
 /*
  * Calculates the distance with the information obtained from the sensors  
  */
-float calculDistance(uint8_t echoPin){
+float calculDistance(uint8_t trigPin, uint8_t echoPin){
   uint32_t duration; // duration of the round trip
   float cm;  // distance of the obstacle
 
@@ -160,10 +166,10 @@ void navigate()
   float cm_right;
   
   noInterrupts();
-  cm_front_left = calculDistance(echoPin_front_left);
-  cm_front_right = calculDistance(echoPin_front_right);
-  cm_left = calculDistance(echoPin_left);
-  cm_right = calculDistance(echoPin_right);
+  cm_front_left = calculDistance(trigPin_front_left, echoPin_front_left);
+  cm_front_right = calculDistance(trigPin_front_right, echoPin_front_right);
+  cm_left = calculDistance(trigPin_left, echoPin_left);
+  cm_right = calculDistance(trigPin_right, echoPin_right);
 
   resultatExplore=explore(cm_front_left, cm_front_right, cm_left, cm_right);
   interrupts();
