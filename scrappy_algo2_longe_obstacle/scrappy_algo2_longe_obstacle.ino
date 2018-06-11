@@ -383,5 +383,5 @@ void setup() {
 void loop()
 {
   navigate();
-  //send_message();
+  send_message();
 }
