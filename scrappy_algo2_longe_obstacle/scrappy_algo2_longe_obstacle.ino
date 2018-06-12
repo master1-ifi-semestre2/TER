@@ -52,8 +52,8 @@ Message msg;
 
 
 /* Measurements */
-const float safetyDistance = 20; // according with the speed, expressed in cm
-const float robotWidth = 22; // and the height is 12 cm
+const float safetyDistance = 30; // according with the speed, expressed in cm
+const float robotWidth = 20; // and the height is 12 cm
 
 
 /* LEDs
@@ -68,7 +68,8 @@ const uint8_t ledPin_right = 16;
 
 /* Movement */
 volatile int currentState = FORWARD_; // initial state = forward
-const int motorSpeed = 200;
+const int motorSpeed = 200; // from 0 (off) to 255 (max speed)
+
 
 /*
  * Determines where to move
@@ -83,17 +84,109 @@ Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 // Or, create it with a different I2C address (say for stacking)
 // Adafruit_MotorShield AFMS = Adafruit_MotorShield(0x61); 
 
-// Motor 1 -> right Motor 2 -> left
-Adafruit_DCMotor *motorRight = AFMS.getMotor(1);
-Adafruit_DCMotor *motorLeft = AFMS.getMotor(2);
+// Motor 1 -> left / Motor 2 -> right
+Adafruit_DCMotor *motorLeft = AFMS.getMotor(1);
+Adafruit_DCMotor *motorRight = AFMS.getMotor(2);
 
 
-void initValue(){
-  currentState = FORWARD_;
-  objectDetected = 0;
-  searchingObject = false;
-  tick = 0;
+/*
+ * Motors setup and movement
+ */ 
+void setupMotors() {
+  // Left wheel
+  motorLeft->setSpeed(motorSpeed);
+  motorLeft->run(FORWARD);
+  // turn on motor
+  motorLeft->run(RELEASE);
+  
+  // Right wheel
+  motorRight->setSpeed(motorSpeed);
+  motorRight->run(FORWARD);
+  // turn on motor
+  motorRight->run(RELEASE);
 }
+
+void moveForward() {
+  motorLeft->run(FORWARD);
+  motorRight->run(FORWARD);
+  msg.value = FORWARD_; 
+}
+
+void moveBackward() {
+  motorLeft->run(BACKWARD);
+  motorRight->run(BACKWARD);
+
+  // turn on back led
+  // turnOnLed(ledPin_back);
+
+  msg.value = BACKWARD_;
+}
+
+void moveLeft() {
+  motorLeft->run(BACKWARD);
+  motorRight->run(FORWARD);
+
+  // turn on left led
+  // turnOnLed(ledPin_left);
+
+  msg.value = LEFT_;
+}
+
+void moveRight() {
+  motorLeft->run(FORWARD);
+  motorRight->run(BACKWARD);
+
+  // turn on right led
+  // turnOnLed(ledPin_right);
+
+  msg.value = RIGHT_;
+}
+
+
+/*
+ * Transmitter setup and send message
+ */
+void setupTransmitter() {
+  // Setup the transmitter
+  vw_set_tx_pin(transmit_pin);
+  vw_set_ptt_inverted(true);
+  vw_setup(2000);
+
+  // Set initial message
+  msg.id = myId;
+  msg.value = FORWARD_;
+}
+
+/* Sends message on how to move */
+void sendMessage() {
+  vw_send((byte*) &msg, sizeof(msg));
+  vw_wait_tx(); // On attend la fin de l'envoi
+  //Serial.println("Message send !");
+  delay(50);
+}
+
+
+/*
+ * LEDs setup
+ */ 
+void setupLeds() {
+  pinMode(ledPin_left, OUTPUT);
+  pinMode(ledPin_back, OUTPUT);
+  pinMode(ledPin_right, OUTPUT);  
+}
+
+void turnOffAllLeds() { 
+  digitalWrite(ledPin_left, LOW);
+  digitalWrite(ledPin_back, LOW);
+  digitalWrite(ledPin_right, LOW);
+  delay(100);
+}
+
+void turnOnLed(uint8_t ledPin) {
+  digitalWrite(ledPin, HIGH);  
+}
+
+
 
 /*
  * Calculates the distance with the information obtained from the sensors  
@@ -126,6 +219,14 @@ float calculDistance(uint8_t trigPin, uint8_t echoPin){
   return cm;
 }
 
+
+void initValue(){
+  currentState = FORWARD_;
+  objectDetected = 0;
+  searchingObject = false;
+  tick = 0;
+}
+
 int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_right, float cm_right, float cm_RIGHT) {  
   Serial.print(cm_LEFT);
   Serial.print(" - ");
@@ -142,8 +243,7 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
   if (tick < 3){
     return randomDir; 
   }
-
-  if (tick > 200){
+  else if (tick > 200) {
       Serial.println("random");
       randomDir = objectDetected;
       initValue();
@@ -293,7 +393,7 @@ void navigate(){
     motorLeft->run(BACKWARD);
 
     // turn on backward led
-    digitalWrite(ledPin_back, HIGH);
+    //digitalWrite(ledPin_back, HIGH);
 
     msg.value = BACKWARD_;
   }
@@ -305,7 +405,7 @@ void navigate(){
     motorLeft->run(FORWARD);
 
     // turn on left led
-    digitalWrite(ledPin_left, HIGH);
+    //digitalWrite(ledPin_left, HIGH);
 
     msg.value = LEFT_;
   }
@@ -317,7 +417,7 @@ void navigate(){
     motorLeft->run(RELEASE);
 
     // turn on right led
-    digitalWrite(ledPin_right, HIGH);
+    //digitalWrite(ledPin_right, HIGH);
 
     msg.value = RIGHT_;
   }
@@ -337,7 +437,7 @@ void send_message() {
   
   delay(50);
 }
- 
+
 
 /*
  * Initial setup
@@ -354,7 +454,7 @@ void setup() {
 
   // Set initial message
   msg.id = myId;
-  msg.value = 0;
+  msg.value = FORWARD_;
 
   // Right wheel
   // Set the speed to start, from 0 (off) to 255 (max speed)
@@ -371,9 +471,10 @@ void setup() {
   motorLeft->run(RELEASE);
 
   // setup leds
-  pinMode(ledPin_left, OUTPUT);
+  /*pinMode(ledPin_left, OUTPUT);
   pinMode(ledPin_back, OUTPUT);
   pinMode(ledPin_right, OUTPUT);
+  */
 }
 
 

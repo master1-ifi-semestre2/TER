@@ -17,7 +17,6 @@
 #include <TimerOne.h>
 #include <VirtualWire.h>
 
-
 #define FORWARD_ 0
 #define BACKWARD_ 2
 #define LEFT_ -1
@@ -39,8 +38,9 @@ const uint8_t trigPin_front_left = 11;
 const uint8_t trigPin_left = 12;
 const uint8_t trigPin_LEFT = 13;
 
+
 /* Communication */
-const int transmit_pin = 17;    
+const int transmit_pin = 14;    
 const uint8_t myId = 0; // boss
 
 typedef struct {
@@ -52,8 +52,8 @@ Message msg;
 
 
 /* Measurements */
-const float safetyDistance = 27; // according with the speed, expressed in cm
-const float robotWidth = 20; // and the height is 12 cm
+const float safetyDistance = 30; // according with the speed. Expressed in cm
+const float robotWidth = 20;  // expressed in cm
 
 
 /* LEDs
@@ -68,18 +68,115 @@ const uint8_t ledPin_right = 16;
 
 /* Movement */
 volatile int currentState = FORWARD_; // initial state = forward
-const int motorSpeed = 130;
-
-
+const int motorSpeed = 200; // from 0 (off) to 255 (max speed)
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 // Or, create it with a different I2C address (say for stacking)
 // Adafruit_MotorShield AFMS = Adafruit_MotorShield(0x61); 
 
-// Motor 1 -> right Motor 2 -> left
-Adafruit_DCMotor *motorRight = AFMS.getMotor(3);
-Adafruit_DCMotor *motorLeft = AFMS.getMotor(4);
+// Motor 1 -> left / Motor 2 -> right
+Adafruit_DCMotor *motorLeft = AFMS.getMotor(1);
+Adafruit_DCMotor *motorRight = AFMS.getMotor(2);
+
+
+
+/*
+ * Motors setup and movement
+ */ 
+void setupMotors() {
+  // Left wheel
+  motorLeft->setSpeed(motorSpeed);
+  motorLeft->run(FORWARD);
+  // turn on motor
+  motorLeft->run(RELEASE);
+  
+  // Right wheel
+  motorRight->setSpeed(motorSpeed);
+  motorRight->run(FORWARD);
+  // turn on motor
+  motorRight->run(RELEASE);
+}
+
+void moveForward() {
+  motorLeft->run(FORWARD);
+  motorRight->run(FORWARD);
+  msg.value = FORWARD_; 
+}
+
+void moveBackward() {
+  motorLeft->run(BACKWARD);
+  motorRight->run(BACKWARD);
+
+  // turn on back led
+  // turnOnLed(ledPin_back);
+
+  msg.value = BACKWARD_;
+}
+
+void moveLeft() {
+  motorLeft->run(BACKWARD);
+  motorRight->run(FORWARD);
+
+  // turn on left led
+  // turnOnLed(ledPin_left);
+
+  msg.value = LEFT_;
+}
+
+void moveRight() {
+  motorLeft->run(FORWARD);
+  motorRight->run(BACKWARD);
+
+  // turn on right led
+  // turnOnLed(ledPin_right);
+
+  msg.value = RIGHT_;
+}
+
+
+/*
+ * Transmitter setup and send message
+ */
+void setupTransmitter() {
+  // Setup the transmitter
+  vw_set_tx_pin(transmit_pin);
+  vw_set_ptt_inverted(true);
+  vw_setup(2000);
+
+  // Set initial message
+  msg.id = myId;
+  msg.value = FORWARD_;
+}
+
+/* Sends message on how to move */
+void sendMessage() {
+  vw_send((byte*) &msg, sizeof(msg));
+  vw_wait_tx(); // On attend la fin de l'envoi
+  //Serial.println("Message send !");
+  delay(10);
+}
+
+
+/*
+ * LEDs setup
+ */ 
+void setupLeds() {
+  pinMode(ledPin_left, OUTPUT);
+  pinMode(ledPin_back, OUTPUT);
+  pinMode(ledPin_right, OUTPUT);  
+}
+
+void turnOffAllLeds() { 
+  digitalWrite(ledPin_left, LOW);
+  digitalWrite(ledPin_back, LOW);
+  digitalWrite(ledPin_right, LOW);
+  delay(100);
+}
+
+void turnOnLed(uint8_t ledPin) {
+  digitalWrite(ledPin, HIGH);  
+}
 
 
 
@@ -97,7 +194,6 @@ float calculDistance(uint8_t trigPin, uint8_t echoPin){
   delayMicroseconds(3);
 
   // Start trigger signal
-
   digitalWrite(trigPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
@@ -115,8 +211,9 @@ float calculDistance(uint8_t trigPin, uint8_t echoPin){
 }
 
 
+
 /*
- * Determines where to move
+ * Determines where to move to avoid obstacles
  */
 int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_right) {
       
@@ -129,165 +226,144 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_r
   Serial.println(cm_right);
 
    // if there is enough space everywhere then go forward
-   if ((cm_front_right > robotWidth + safetyDistance) && (cm_front_left > robotWidth + safetyDistance) && cm_left > safetyDistance && cm_right > safetyDistance){    
-         //Serial.println("↑");
+   if ((cm_front_right > robotWidth + safetyDistance) && (cm_front_left > robotWidth + safetyDistance) && cm_left > safetyDistance && cm_right > safetyDistance) {    
          return FORWARD_;
    }
-   // if there is not enough space in front of it, but there's enough to turn then turn right or left (where there is more space)
+   // if there is not enough space in front of him, but there's enough to turn then turn right or left (where there is more space)
    else if (cm_front_left > robotWidth || cm_front_right > robotWidth) {
-        if (cm_left > cm_right){
-             //Serial.println("←");
+        if (cm_left > cm_right /* TODO: || cm_LEFT > cm_RIGHT */) {
              return LEFT_;
         }
         else {
-             //SeriaRIGHT.println("➝");
              return RIGHT_;
         }   
    }
    // if there's not enough space anywhere then go backward
    else {
-        //Serial.println("↓");
         return BACKWARD_;
    }
 } 
 
 
-
 /*
- * Moves the wheels
+ * Moves the robot
  */
 void navigate()
 {
   int resultatExplore;
-  
-  float cm_front_left;  // distance of the obstacle
+
+  // distances from all sides
+  float cm_front_left;
   float cm_front_right;
   float cm_left;
   float cm_right;
+  /*
+    TODO:
+    float cm_LEFT;
+    float cm_RIGHT;  
+  */
   
   noInterrupts();
   cm_front_left = calculDistance(trigPin_front_left, echoPin_front_left);
   cm_front_right = calculDistance(trigPin_front_right, echoPin_front_right);
   cm_left = calculDistance(trigPin_left, echoPin_left);
   cm_right = calculDistance(trigPin_right, echoPin_right);
+  /*
+    TODO:
+    cm_LEFT = calculDistance(trigPin_LEFT, echoPin_LEFT);
+    cm_RIGHT = calculDistance(trigPin_RIGHT, echoPin_RIGHT);  
+  */
 
   resultatExplore=explore(cm_front_left, cm_front_right, cm_left, cm_right);
+  /*
+    TODO:
+    resultatExplore=explore(cm_front_left, cm_front_right, cm_left, cm_right, cm_LEFT, cm_RIGHT);  
+  */
   interrupts();
 
-  // if it turns then don't stop turning until it finds free space in front of it
+  // if it turns then don't stop turning until it finds free space in front of him
   if ((currentState == RIGHT_ || currentState == LEFT_) && (resultatExplore == LEFT_ || resultatExplore == RIGHT_)) {
     resultatExplore = currentState;
   }
 
   // turn off leds
-  digitalWrite(ledPin_left, LOW);
-  digitalWrite(ledPin_back, LOW);
-  digitalWrite(ledPin_right, LOW);
-  delay(100);
+  // turnOffAllLeds();
   
   currentState = resultatExplore;
-  motorRight->run(RELEASE);
   motorLeft->run(RELEASE);
+  motorRight->run(RELEASE);
 
+  /*
   // move forward  
   if(resultatExplore == FORWARD_) { 
-    Serial.println("Marche avant");
-    motorRight->run(FORWARD);
-    motorLeft->run(FORWARD);
-
-    msg.value = FORWARD_; 
+    Serial.println("avant");
+    moveForward();
   }
   // move backward
   else if(resultatExplore == BACKWARD_) {
-    Serial.println("Marche arriere");
-    motorRight->run(BACKWARD);
-    motorLeft->run(BACKWARD);
-
-    // turn on backward led
-    digitalWrite(ledPin_back, HIGH);
-
-    msg.value = BACKWARD_;
+    Serial.println("arriere");
+    moveBackward();
   }
   // move left
   else if(resultatExplore == LEFT_) { 
     Serial.println("gauche"); 
-    motorRight->run(BACKWARD);
-    motorLeft->run(FORWARD);
-
-    // turn on left led
-    digitalWrite(ledPin_left, HIGH);
-
-    msg.value = LEFT_;
+    moveLeft();
   }
   // move right
   else if(resultatExplore == RIGHT_) {
     Serial.println("droite");
-    motorRight->run(FORWARD);
-    motorLeft->run(BACKWARD);
+    moveRight();
+  }*/
 
-    // turn on right led
-    digitalWrite(ledPin_right, HIGH);
+  switch(resultatExplore) {
+    // move forward  
+    case FORWARD_:  
+      Serial.println("avant");
+      moveForward();
+      break;
 
-    msg.value = RIGHT_;
+    // move backward
+    case BACKWARD_:
+      Serial.println("arriere");
+      moveBackward();
+      break;
+
+    // move left
+    case LEFT_: 
+      Serial.println("gauche"); 
+      moveLeft();
+      break;
+
+    // move right
+    case RIGHT_:
+      Serial.println("droite");
+      moveRight();
+      break;
   }
 }
 
-
-
-/*
- * Sends message on how to move to other robot
- */
-void send_message() {
-  vw_send((byte*) &msg, sizeof(msg));
-  vw_wait_tx(); // On attend la fin de l'envoi
-  Serial.println("Message send !");
-  delay(300);
-}
  
-
 /*
  * Initial setup
  */
 void setup() {
-  // initialize serial communication:
+  // initialize serial communication
   Serial.begin(9600);
   AFMS.begin();  // create with the default frequency 1.6KHz
   
-  // Setup the transmitter for communication
-  vw_set_tx_pin(transmit_pin);
-  vw_set_ptt_inverted(true);
-  vw_setup(2000);
-
-  // Set initial message
-  msg.id = myId;
-  msg.value = FORWARD_;
-
-  // Right wheel
-  // Set the speed to start, from 0 (off) to 255 (max speed)
-  motorRight->setSpeed(motorSpeed);
-  motorRight->run(FORWARD);
-  // turn on motor
-  motorRight->run(RELEASE);
-  
-  // Left wheel
-  // Set the speed to start, from 0 (off) to 255 (max speed)
-  motorLeft->setSpeed(motorSpeed);
-  motorLeft->run(FORWARD);
-  // turn on motor
-  motorLeft->run(RELEASE);
+  setupTransmitter();
+  setupMotors();
 
   // setup leds
-  pinMode(ledPin_left, OUTPUT);
-  pinMode(ledPin_back, OUTPUT);
-  pinMode(ledPin_right, OUTPUT);
+  //setupLeds();
 }
 
 
 /*
- * It executes navigate and sends the message
+ * It's the the function that will be called at each tick time. It executes navigate and sends the message
  */
 void loop()
 {
   navigate();
-  send_message();
+  sendMessage();
 }
