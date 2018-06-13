@@ -84,8 +84,8 @@ Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 // Or, create it with a different I2C address (say for stacking)
 // Adafruit_MotorShield AFMS = Adafruit_MotorShield(0x61); 
 
-// Motor 1 -> left / Motor 2 -> right
-Adafruit_DCMotor *motorLeft = AFMS.getMotor(1);
+// Motor 4 -> left / Motor 2 -> right
+Adafruit_DCMotor *motorLeft = AFMS.getMotor(4);
 Adafruit_DCMotor *motorRight = AFMS.getMotor(2);
 
 
