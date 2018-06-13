@@ -231,6 +231,8 @@ void initValue() {
  * Determines where to move
  */
 int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_right, float cm_right, float cm_RIGHT) {  
+  Serial.print("object detected (-1 == left) ");
+  Serial.println(objectDetected);
   Serial.print(cm_LEFT);
   Serial.print(" - ");
   Serial.print(cm_left);
@@ -243,14 +245,14 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
   Serial.print(" - ");
    Serial.println(cm_RIGHT);
    
-  if (tick < 3) {
+  if (tick < 4) {
     return randomDir; 
   }
   else if (tick > 200) {
       Serial.println("random");
-      randomDir = objectDetected;
+      randomDir = -objectDetected;
       initValue();
-      return -randomDir;
+      return randomDir;
   }
   
  if (searchingObject && objectDetected == LEFT_){
