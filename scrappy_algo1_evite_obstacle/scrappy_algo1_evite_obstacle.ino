@@ -52,7 +52,7 @@ Message msg;
 
 
 /* Measurements */
-const float safetyDistance = 30; // according with the speed. Expressed in cm
+const float safetyDistance = 20; // according with the speed. Expressed in cm
 const float robotWidth = 20;  // expressed in cm
 
 
@@ -61,9 +61,9 @@ const float robotWidth = 20;  // expressed in cm
  * short side : ground
  * resistor : 100 Ohm
  */
-const uint8_t ledPin_left = 14;
-const uint8_t ledPin_back = 15;
-const uint8_t ledPin_right = 16;
+const uint8_t ledPin_left = 15;
+const uint8_t ledPin_back = 16;
+const uint8_t ledPin_right = 17;
 
 
 /* Movement */
@@ -76,7 +76,7 @@ Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 // Adafruit_MotorShield AFMS = Adafruit_MotorShield(0x61); 
 
 // Motor 1 -> left / Motor 2 -> right
-Adafruit_DCMotor *motorLeft = AFMS.getMotor(1);
+Adafruit_DCMotor *motorLeft = AFMS.getMotor(4);
 Adafruit_DCMotor *motorRight = AFMS.getMotor(2);
 
 
@@ -152,7 +152,7 @@ void setupTransmitter() {
 /* Sends message on how to move */
 void sendMessage() {
   vw_send((byte*) &msg, sizeof(msg));
-  vw_wait_tx(); // On attend la fin de l'envoi
+  vw_wait_tx(); // we wait until the message is sent
   //Serial.println("Message send !");
   delay(10);
 }
@@ -183,7 +183,7 @@ void turnOnLed(uint8_t ledPin) {
 /*
  * Calculates the distance with the information obtained from the sensors  
  */
-float calculDistance(uint8_t trigPin, uint8_t echoPin){
+float calculDistance(uint8_t trigPin, uint8_t echoPin) {
   uint32_t duration; // duration of the round trip
   float cm;  // distance of the obstacle
 
@@ -215,7 +215,7 @@ float calculDistance(uint8_t trigPin, uint8_t echoPin){
 /*
  * Determines where to move to avoid obstacles
  */
-int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_right) {
+int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_right, float cm_LEFT, float cm_RIGHT) {
       
   Serial.print(cm_left);
   Serial.print("  -  ");
@@ -231,7 +231,7 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_r
    }
    // if there is not enough space in front of him, but there's enough to turn then turn right or left (where there is more space)
    else if (cm_front_left > robotWidth || cm_front_right > robotWidth) {
-        if (cm_left > cm_right /* TODO: || cm_LEFT > cm_RIGHT */) {
+        if (cm_left > cm_right || cm_LEFT > cm_RIGHT) {
              return LEFT_;
         }
         else {
@@ -257,28 +257,19 @@ void navigate()
   float cm_front_right;
   float cm_left;
   float cm_right;
-  /*
-    TODO:
-    float cm_LEFT;
-    float cm_RIGHT;  
-  */
+  float cm_LEFT;
+  float cm_RIGHT;  
   
   noInterrupts();
   cm_front_left = calculDistance(trigPin_front_left, echoPin_front_left);
   cm_front_right = calculDistance(trigPin_front_right, echoPin_front_right);
   cm_left = calculDistance(trigPin_left, echoPin_left);
   cm_right = calculDistance(trigPin_right, echoPin_right);
-  /*
-    TODO:
-    cm_LEFT = calculDistance(trigPin_LEFT, echoPin_LEFT);
-    cm_RIGHT = calculDistance(trigPin_RIGHT, echoPin_RIGHT);  
-  */
+  cm_LEFT = calculDistance(trigPin_LEFT, echoPin_LEFT);
+  cm_RIGHT = calculDistance(trigPin_RIGHT, echoPin_RIGHT);  
 
-  resultatExplore=explore(cm_front_left, cm_front_right, cm_left, cm_right);
-  /*
-    TODO:
-    resultatExplore=explore(cm_front_left, cm_front_right, cm_left, cm_right, cm_LEFT, cm_RIGHT);  
-  */
+  resultatExplore=explore(cm_front_left, cm_front_right, cm_left, cm_right, cm_LEFT, cm_RIGHT);  
+ 
   interrupts();
 
   // if it turns then don't stop turning until it finds free space in front of him
@@ -292,28 +283,6 @@ void navigate()
   currentState = resultatExplore;
   motorLeft->run(RELEASE);
   motorRight->run(RELEASE);
-
-  /*
-  // move forward  
-  if(resultatExplore == FORWARD_) { 
-    Serial.println("avant");
-    moveForward();
-  }
-  // move backward
-  else if(resultatExplore == BACKWARD_) {
-    Serial.println("arriere");
-    moveBackward();
-  }
-  // move left
-  else if(resultatExplore == LEFT_) { 
-    Serial.println("gauche"); 
-    moveLeft();
-  }
-  // move right
-  else if(resultatExplore == RIGHT_) {
-    Serial.println("droite");
-    moveRight();
-  }*/
 
   switch(resultatExplore) {
     // move forward  
@@ -353,8 +322,6 @@ void setup() {
   
   setupTransmitter();
   setupMotors();
-
-  // setup leds
   //setupLeds();
 }
 

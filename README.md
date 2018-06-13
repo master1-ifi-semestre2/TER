@@ -1,37 +1,40 @@
-## Welcome to GitHub Pages
+# Robot avec détection d’obstacles
 
-You can use the [editor on GitHub](https://github.com/master1-ifi-semestre2/TER/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+## Robot en queue (Scrappy Junior)
+### Description
+### Schema
+![alt text](schema/scrappy_junior.png "Circuit montage")
+Ici nous avons relié l'Arduino avec le schieldMotor.
 
-### Markdown
+### Composants et outils
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+- Arduino (UNO)
+- Shield Motor
+- Ultrason sensor (HC-RC04)
+- Recepteur radio frequence
+- 2 Moteurs
+- des piles
 
-```markdown
-Syntax highlighted code block
+### Connection Shield Motor avec Arduino
+![alt text](schema/scrappy_junior.png "Circuit montage")
 
-# Header 1
-## Header 2
-### Header 3
+### Connection Shield Motor avec les moteurs
+![alt text](schema/scrappy_junior.png "Circuit montage")
 
-- Bulleted
-- List
+### Connection Shield Motor avec les capteurs Ultrason
+![alt text](schema/scrappy_junior.png "Circuit montage")
 
-1. Numbered
-2. List
+### Connection Shield Motor avec l'Emeteur / Recepteur
+![alt text](schema/scrappy_junior.png "Circuit montage")
 
-**Bold** and _Italic_ and `Code` text
+### Utilisation de la découpe Laser
+![alt text](schema/scrappy_junior.png "Circuit montage")
 
-[Link](url) and ![Image](src)
-```
+### Utilisation de l'imprimante 3D
+![alt text](schema/scrappy_junior.png "Circuit montage")
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+## Description du code
+![alt text](schema/scrappy_junior.png "Circuit montage")
 
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/master1-ifi-semestre2/TER/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+[contact support](https://github.com/contact) and we’ll help you sort it out.
