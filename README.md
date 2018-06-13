@@ -25,33 +25,22 @@ Le robot de tête sera composer de 6 capteurs a ultrason et d'emetteur radio qui
 - 2 Moteurs
 - 10 piles (1,2 V)
 
+## Robot en tête (Scrappy)
+### Description
+### Schema du montage
+![alt text](schema/scrappy.png "Circuit montage du Robot en tête")
+
 ## Robot en queue (Scrappy Junior)
 ### Description
-### Schema
-![alt text](schema/scrappy.png "Circuit montage")
-
-![alt text](schema/scrappy_junior.png "Circuit montage")
+### Schema du montage
+![alt text](schema/scrappy_junior.png "Circuit montage du Robot en queue")
 Ici nous avons relié l'Arduino avec le schieldMotor.
 
-### Connection Shield Motor avec Arduino
+## Utilisation de la découpe Laser
 ![alt text](schema/scrappy_junior.png "Circuit montage")
 
-### Connection Shield Motor avec les moteurs
-![alt text](schema/scrappy_junior.png "Circuit montage")
-
-### Connection Shield Motor avec les capteurs Ultrason
-![alt text](schema/scrappy_junior.png "Circuit montage")
-
-### Connection Shield Motor avec l'Emeteur / Recepteur
-![alt text](schema/scrappy_junior.png "Circuit montage")
-
-### Utilisation de la découpe Laser
-![alt text](schema/scrappy_junior.png "Circuit montage")
-
-### Utilisation de l'imprimante 3D
+## Utilisation de l'imprimante 3D
 ![alt text](schema/scrappy_junior.png "Circuit montage")
 
 ## Description du code
 ![alt text](schema/scrappy_junior.png "Circuit montage")
-
-[contact support](https://github.com/contact) and we’ll help you sort it out.
