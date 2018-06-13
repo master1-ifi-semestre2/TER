@@ -61,9 +61,9 @@ const float robotWidth = 20; // and the height is 12 cm
  * short side : ground
  * resistor : 100 Ohm
  */
-const uint8_t ledPin_left = 14;
-const uint8_t ledPin_back = 15;
-const uint8_t ledPin_right = 16;
+const uint8_t ledPin_left = 15;
+const uint8_t ledPin_back = 16;
+const uint8_t ledPin_right = 17;
 
 
 /* Movement */
@@ -74,7 +74,7 @@ const int motorSpeed = 200; // from 0 (off) to 255 (max speed)
 /*
  * Determines where to move
  */
-int objectDetected = 0; // 0 false, !0 true
+int objectDetected = 0; // the side where the object is detected
 boolean searchingObject = false;
 int tick = 0;
 int randomDir = FORWARD_;
@@ -107,14 +107,14 @@ void setupMotors() {
 }
 
 void moveForward() {
-  motorLeft->run(FORWARD);
   motorRight->run(FORWARD);
+  motorLeft->run(FORWARD);
   msg.value = FORWARD_; 
 }
 
 void moveBackward() {
-  motorLeft->run(BACKWARD);
   motorRight->run(BACKWARD);
+  motorLeft->run(BACKWARD);
 
   // turn on back led
   // turnOnLed(ledPin_back);
@@ -123,7 +123,7 @@ void moveBackward() {
 }
 
 void moveLeft() {
-  motorLeft->run(BACKWARD);
+  motorLeft->run(RELEASE);
   motorRight->run(FORWARD);
 
   // turn on left led
@@ -134,7 +134,7 @@ void moveLeft() {
 
 void moveRight() {
   motorLeft->run(FORWARD);
-  motorRight->run(BACKWARD);
+  motorRight->run(RELEASE);
 
   // turn on right led
   // turnOnLed(ledPin_right);
@@ -160,9 +160,9 @@ void setupTransmitter() {
 /* Sends message on how to move */
 void sendMessage() {
   vw_send((byte*) &msg, sizeof(msg));
-  vw_wait_tx(); // On attend la fin de l'envoi
+  vw_wait_tx(); // we wait until the message is sent
   //Serial.println("Message send !");
-  delay(50);
+  delay(10);
 }
 
 
@@ -220,13 +220,16 @@ float calculDistance(uint8_t trigPin, uint8_t echoPin){
 }
 
 
-void initValue(){
+void initValue() {
   currentState = FORWARD_;
   objectDetected = 0;
   searchingObject = false;
   tick = 0;
 }
 
+/*
+ * Determines where to move
+ */
 int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_right, float cm_right, float cm_RIGHT) {  
   Serial.print(cm_LEFT);
   Serial.print(" - ");
@@ -240,7 +243,7 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
   Serial.print(" - ");
    Serial.println(cm_RIGHT);
    
-  if (tick < 3){
+  if (tick < 3) {
     return randomDir; 
   }
   else if (tick > 200) {
@@ -250,8 +253,8 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
       return -randomDir;
   }
   
- if (searchingObject == true && objectDetected == LEFT_){
-    /* Tourner jusqu'à être parallèle à l'objet */
+ if (searchingObject && objectDetected == LEFT_){
+    // Turn until robot is parallel to the object
     if (cm_LEFT < safetyDistance ||  cm_left < safetyDistance){
          searchingObject = false;
     }
@@ -260,9 +263,9 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
          return RIGHT_;
     }
  }
- else if (searchingObject == true && objectDetected == RIGHT_){
-    /* Tourner jusqu'à être parallèle à l'objet */
-     if (cm_RIGHT < safetyDistance ||  cm_right < safetyDistance){
+ else if (searchingObject && objectDetected == RIGHT_){
+    // Turn until robot is parallel to the object
+    if (cm_RIGHT < safetyDistance ||  cm_right < safetyDistance){
          searchingObject = false;
     }
     else {
@@ -272,9 +275,9 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
  }
 
  if (objectDetected == LEFT_) {
-      // Si il a déjà détecté un objet
+      // If there is already an object detected
       if(cm_LEFT > safetyDistance && cm_left > safetyDistance) {
-        /* Object detected in left side, and he has pass the object, then he has to turn in left */
+        // If there is an object detected on the left and he has passed it, then he has to turn left
         return LEFT_;
       } 
       if (cm_LEFT < safetyDistance - 10 ||  cm_left < safetyDistance - 10 || cm_front_right < safetyDistance || cm_front_left < safetyDistance){
@@ -283,10 +286,9 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
     return FORWARD_; 
   } 
   else if (objectDetected == RIGHT_) {
-      
-      // Si il a déjà détecté un objet
+      // If there is already an object detected
       if(cm_RIGHT > safetyDistance && cm_right > safetyDistance) {
-        /* Object detected in left side, and he has pass the object, then he has to turn in left */
+        // If there is an object detected on the left and he has passed it, then he has to turn right
         return RIGHT_;
       } 
       if (cm_RIGHT < safetyDistance - 10 ||  cm_right < safetyDistance - 10 || cm_front_right < safetyDistance || cm_front_left < safetyDistance){
@@ -295,33 +297,31 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
     return FORWARD_; 
   }
   else {
-    /* Pas d'object détecté !!*/
-
+    // There's no object detected
     if(cm_LEFT < safetyDistance || cm_left < safetyDistance) {
-        /* Detected an object in left side */
+        // Object detected on the left side
          objectDetected = LEFT_;
      }
      else if(cm_RIGHT < safetyDistance || cm_right < safetyDistance) {
-        /* Detected an object in right side */
+        // Object detected on the right side
          objectDetected = RIGHT_;
      }
      else if(cm_front_left < safetyDistance || cm_front_right < safetyDistance) {
-        /* He detects an object in front of him */
+        // Object detected in front of him
         
         if(cm_LEFT < safetyDistance || cm_left < safetyDistance) {
-            /* There is an object on left side */
+            // There is an object on the left side 
             objectDetected = LEFT_;
             return RIGHT_;
         }
         else if(cm_RIGHT < safetyDistance || cm_right < safetyDistance) {
-            /* There is an object on right side */
+            // There is an object on the right side
             objectDetected = RIGHT_;
             return LEFT_;
         }
-
         else {
-            /* Compare both side */
-            if  (cm_right > cm_left){
+            // Compare both sides
+            if  (cm_right > cm_left) {
                 objectDetected = LEFT_;
                 searchingObject = true;
                 return RIGHT_;
@@ -367,15 +367,14 @@ void navigate(){
   tick++;
     
   // turn off leds
-  /*digitalWrite(ledPin_left, LOW);
-  digitalWrite(ledPin_back, LOW);
-  digitalWrite(ledPin_right, LOW);
-  delay(100);*/
+  // turnOffAllLeds();
   
   currentState = resultatExplore;
   motorRight->run(RELEASE);
   motorLeft->run(RELEASE);
 
+
+  /*
   // move forward  
   if(resultatExplore == FORWARD_) { 
     Serial.print("avant  ");
@@ -421,21 +420,36 @@ void navigate(){
 
     msg.value = RIGHT_;
   }
-}
+  */
+  switch(resultatExplore) {
+    // move forward  
+    case FORWARD_:  
+      Serial.print("avant  ");
+      Serial.println(tick);
+      moveForward();
+      break;
 
+    // move backward
+    case BACKWARD_:
+      Serial.print("arriere  ");
+      Serial.println(tick);
+      moveBackward();
+      break;
 
+    // move left
+    case LEFT_: 
+      Serial.print("gauche  ");
+      Serial.println(tick); 
+      moveLeft();
+      break;
 
-/*
- * Sends message on how to move to other robot
- */
-void send_message() {
-  vw_send((byte*) &msg, sizeof(msg));
-  vw_wait_tx(); // On attend la fin de l'envoi
-  Serial.print("Message send: ");
-  Serial.println(msg.value);
-  Serial.println("");
-  
-  delay(50);
+    // move right
+    case RIGHT_:
+      Serial.print("droite  ");
+      Serial.println(tick);
+      moveRight();
+      break;
+  }
 }
 
 
@@ -447,42 +461,17 @@ void setup() {
   Serial.begin(9600);
   AFMS.begin();  // create with the default frequency 1.6KHz
   
-  // Setup the transmitter for communication
-  vw_set_tx_pin(transmit_pin);
-  vw_set_ptt_inverted(true);
-  vw_setup(2000);
-
-  // Set initial message
-  msg.id = myId;
-  msg.value = FORWARD_;
-
-  // Right wheel
-  // Set the speed to start, from 0 (off) to 255 (max speed)
-  motorRight->setSpeed(motorSpeed);
-  motorRight->run(FORWARD);
-  // turn on motor
-  motorRight->run(RELEASE);
-  
-  // Left wheel
-  // Set the speed to start, from 0 (off) to 255 (max speed)
-  motorLeft->setSpeed(motorSpeed);
-  motorLeft->run(FORWARD);
-  // turn on motor
-  motorLeft->run(RELEASE);
-
-  // setup leds
-  /*pinMode(ledPin_left, OUTPUT);
-  pinMode(ledPin_back, OUTPUT);
-  pinMode(ledPin_right, OUTPUT);
-  */
+  setupTransmitter();
+  setupMotors();
+  //setupLeds();
 }
 
 
 /*
- * It executes navigate and sends the message
+ * It's the the function that will be called at each tick time. It executes navigate and sends the message
  */
 void loop()
 {
   navigate();
-  send_message();
+  sendMessage();
 }
