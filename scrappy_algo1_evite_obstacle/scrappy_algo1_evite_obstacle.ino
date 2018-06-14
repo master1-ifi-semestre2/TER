@@ -15,7 +15,9 @@
 #include <Adafruit_MotorShield.h>
 #include <Adafruit_PWMServoDriver.h>
 #include <TimerOne.h>
-#include <VirtualWire.h>
+//#include <VirtualWire.h>
+#include <RH_ASK.h>
+#include <SPI.h>
 
 #define FORWARD_ 0
 #define BACKWARD_ 2
@@ -39,18 +41,6 @@ const uint8_t trigPin_left = 12;
 const uint8_t trigPin_LEFT = 13;
 
 
-/* Communication */
-const int transmit_pin = 14;    
-const uint8_t myId = 0; // boss
-
-typedef struct {
-  int id;
-  int value;
-} Message;
-
-Message msg;
-
-
 /* Measurements */
 const float safetyDistance = 20; // according with the speed. Expressed in cm
 const float robotWidth = 20;  // expressed in cm
@@ -68,7 +58,7 @@ const uint8_t ledPin_right = 17;
 
 /* Movement */
 volatile int currentState = FORWARD_; // initial state = forward
-const int motorSpeed = 200; // from 0 (off) to 255 (max speed)
+const int motorSpeed = 70; // from 0 (off) to 255 (max speed)
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
@@ -79,6 +69,21 @@ Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 Adafruit_DCMotor *motorLeft = AFMS.getMotor(4);
 Adafruit_DCMotor *motorRight = AFMS.getMotor(2);
 
+
+/* Communication */
+RH_ASK driver(2000, 15, 14);
+int msg = currentState;
+
+/*const int transmit_pin = 14;    
+const uint8_t myId = 0; // boss
+
+typedef struct {
+  int id;
+  int value;
+} Message;
+
+Message msg;
+*/
 
 
 /*
@@ -101,7 +106,7 @@ void setupMotors() {
 void moveForward() {
   motorLeft->run(FORWARD);
   motorRight->run(FORWARD);
-  msg.value = FORWARD_; 
+  msg = FORWARD_; 
 }
 
 void moveBackward() {
@@ -111,7 +116,7 @@ void moveBackward() {
   // turn on back led
   // turnOnLed(ledPin_back);
 
-  msg.value = BACKWARD_;
+  msg = BACKWARD_;
 }
 
 void moveLeft() {
@@ -121,7 +126,7 @@ void moveLeft() {
   // turn on left led
   // turnOnLed(ledPin_left);
 
-  msg.value = LEFT_;
+  msg = LEFT_;
 }
 
 void moveRight() {
@@ -131,7 +136,7 @@ void moveRight() {
   // turn on right led
   // turnOnLed(ledPin_right);
 
-  msg.value = RIGHT_;
+  msg = RIGHT_;
 }
 
 
@@ -139,6 +144,9 @@ void moveRight() {
  * Transmitter setup and send message
  */
 void setupTransmitter() {
+  if (!driver.init())
+         Serial.println("init failed");
+  /*
   // Setup the transmitter
   vw_set_tx_pin(transmit_pin);
   vw_set_ptt_inverted(true);
@@ -146,15 +154,19 @@ void setupTransmitter() {
 
   // Set initial message
   msg.id = myId;
-  msg.value = FORWARD_;
+  msg.value = FORWARD_;*/
 }
 
 /* Sends message on how to move */
 void sendMessage() {
+  driver.send((uint8_t *) &msg, sizeof(msg));
+  driver.waitPacketSent();
+  delay(20);
+  /*
   vw_send((byte*) &msg, sizeof(msg));
   vw_wait_tx(); // we wait until the message is sent
   //Serial.println("Message send !");
-  delay(10);
+  delay(10);*/
 }
 
 
