@@ -52,8 +52,9 @@ Message msg;
 
 
 /* Measurements */
-const float safetyDistance = 20; // according with the speed, expressed in cm
+const float safetyDistance = 30; // according with the speed, expressed in cm
 const float robotWidth = 20; // and the height is 12 cm
+const float marge = safetyDistance / 3;
 
 
 /* LEDs
@@ -67,7 +68,6 @@ const uint8_t ledPin_right = 17;
 
 
 /* Movement */
-volatile int currentState = FORWARD_; // initial state = forward
 const int motorSpeed = 200; // from 0 (off) to 255 (max speed)
 
 
@@ -78,6 +78,7 @@ int objectDetected = 0; // the side where the object is detected
 boolean searchingObject = false;
 int tick = 0;
 int randomDir = FORWARD_;
+boolean stop_ = false;
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
@@ -142,6 +143,10 @@ void moveRight() {
   msg.value = RIGHT_;
 }
 
+void dontMove() {
+  motorLeft->run(RELEASE);
+  motorRight->run(RELEASE);
+}
 
 /*
  * Transmitter setup and send message
@@ -221,7 +226,6 @@ float calculDistance(uint8_t trigPin, uint8_t echoPin){
 
 
 void initValue() {
-  currentState = FORWARD_;
   objectDetected = 0;
   searchingObject = false;
   tick = 0;
@@ -237,21 +241,23 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
   Serial.print(" - ");
   Serial.print(cm_left);
   Serial.print(" - ");
-  //Serial.print(cm_front_left);
+  Serial.print(cm_front_left);
   Serial.print(" - ");
-  //Serial.print(cm_front_right);
+  Serial.print(cm_front_right);
   Serial.print(" - ");
   Serial.print(cm_right);
   Serial.print(" - ");
-   Serial.println(cm_RIGHT);
+  Serial.println(cm_RIGHT);
    
-  if (tick < 4) {
-    return randomDir; 
-  }
-  else if (tick > 200) {
+ if (tick > 203){
+  initValue();
+  stop_ = false;
+ }
+ else if (tick == 200) {
       Serial.println("random");
       randomDir = -objectDetected;
-      initValue();
+      //initValue();
+      stop_ = true;
       return randomDir;
   }
   
@@ -282,7 +288,7 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
         // If there is an object detected on the left and he has passed it, then he has to turn left
         return LEFT_;
       } 
-      if (cm_LEFT < safetyDistance - 10 ||  cm_left < safetyDistance - 10 || cm_front_right < safetyDistance || cm_front_left < safetyDistance){
+      if (cm_LEFT < safetyDistance - marge ||  cm_left < safetyDistance - marge || cm_front_right < safetyDistance || cm_front_left < safetyDistance){
         return RIGHT_;
       } 
     return FORWARD_; 
@@ -293,13 +299,17 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
         // If there is an object detected on the left and he has passed it, then he has to turn right
         return RIGHT_;
       } 
-      if (cm_RIGHT < safetyDistance - 10 ||  cm_right < safetyDistance - 10 || cm_front_right < safetyDistance || cm_front_left < safetyDistance){
+      if (cm_RIGHT < safetyDistance - marge ||  cm_right < safetyDistance - marge || cm_front_right < safetyDistance || cm_front_left < safetyDistance){
           return LEFT_;
       } 
     return FORWARD_; 
   }
   else {
     // There's no object detected
+    if (tick < 4) {
+      return randomDir; 
+    }
+    
     if(cm_LEFT < safetyDistance || cm_left < safetyDistance) {
         // Object detected on the left side
          objectDetected = LEFT_;
@@ -308,7 +318,7 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
         // Object detected on the right side
          objectDetected = RIGHT_;
      }
-     else if(cm_front_left < safetyDistance || cm_front_right < safetyDistance) {
+     else if(cm_front_left < safetyDistance && cm_front_right < safetyDistance) {
         // Object detected in front of him
         
         if(cm_LEFT < safetyDistance || cm_left < safetyDistance) {
@@ -354,6 +364,7 @@ void navigate(){
   float cm_LEFT;
   float cm_right;
   float cm_RIGHT;
+
   
   noInterrupts();
   cm_front_left = calculDistance(trigPin_front_left, echoPin_front_left);
@@ -367,11 +378,15 @@ void navigate(){
   interrupts();
 
   tick++;
-    
+
+  if (stop_){
+    dontMove();
+    return;
+  }
+  
   // turn off leds
   // turnOffAllLeds();
   
-  currentState = resultatExplore;
   motorRight->run(RELEASE);
   motorLeft->run(RELEASE);
 
