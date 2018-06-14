@@ -52,7 +52,7 @@ Message msg;
 
 
 /* Measurements */
-const float safetyDistance = 30; // according with the speed, expressed in cm
+const float safetyDistance = 20; // according with the speed, expressed in cm
 const float robotWidth = 20; // and the height is 12 cm
 
 
@@ -375,54 +375,6 @@ void navigate(){
   motorRight->run(RELEASE);
   motorLeft->run(RELEASE);
 
-
-  /*
-  // move forward  
-  if(resultatExplore == FORWARD_) { 
-    Serial.print("avant  ");
-    Serial.println(tick);
-    motorRight->run(FORWARD);
-    motorLeft->run(FORWARD);
-
-    msg.value = FORWARD_; 
-  }
-  // move backward
-  else if(resultatExplore == BACKWARD_) {
-    Serial.print("arriere  ");
-    Serial.println(tick);
-    motorRight->run(BACKWARD);
-    motorLeft->run(BACKWARD);
-
-    // turn on backward led
-    //digitalWrite(ledPin_back, HIGH);
-
-    msg.value = BACKWARD_;
-  }
-  // move left
-  else if(resultatExplore == LEFT_) { 
-    Serial.print("gauche  ");
-    Serial.println(tick); 
-    motorRight->run(RELEASE);
-    motorLeft->run(FORWARD);
-
-    // turn on left led
-    //digitalWrite(ledPin_left, HIGH);
-
-    msg.value = LEFT_;
-  }
-  // move right
-  else if(resultatExplore == RIGHT_) {
-    Serial.print("droite  ");
-    Serial.println(tick);
-    motorRight->run(FORWARD);
-    motorLeft->run(RELEASE);
-
-    // turn on right led
-    //digitalWrite(ledPin_right, HIGH);
-
-    msg.value = RIGHT_;
-  }
-  */
   switch(resultatExplore) {
     // move forward  
     case FORWARD_:  
