@@ -53,7 +53,7 @@ Montez ensuite le nez, puis les capteurs à ultrason. Nous conseillons de renver
 
 Placez l'Arduino et la breadboard à l'emplacement désigné par l'image ci-dessous. Attention à ne pas oublier de relier Shield Motor avec l'Arduino, pour cela placez les connecteurs du Shield Motor sur ceux de l'Arduino.
 
-![Arduino sur chassi](schema/7.jpg "Arduino sur chassi")
+![Arduino sur chassis](schema/7.jpg "Arduino sur chassi")
 
 ## Les branchements
 
@@ -96,7 +96,7 @@ Idéal pour pour découper le chassis
 ![Découpe Laser](schema/00.png "Découpe Laser")
 
 ## Utilisation de l'imprimante 3D
-Vous trouverez tous les plans gcode dans ce [dossier] (https://github.com/master1-ifi-semestre2/TER/tree/master/plansIMPRESSIONS)
+Vous trouverez tous les plans gcode dans ce [dossier](https://github.com/master1-ifi-semestre2/TER/tree/master/plansIMPRESSIONS)
 
 [Cliquez ici pour avoir les plans des elements a imprimer](https://github.com/master1-ifi-semestre2/TER/tree/master/plans3D)
 
