@@ -11,16 +11,21 @@
       
 *****************************************************************************/
 
-#include <Wire.h>
+#include <RH_ASK.h>
+#include <SPI.h>
+
+//#include <Wire.h>
 #include <Adafruit_MotorShield.h>
-#include <Adafruit_PWMServoDriver.h>
-#include <TimerOne.h>
-#include <VirtualWire.h>
+//#include <Adafruit_PWMServoDriver.h>
+//#include <TimerOne.h>
+//#include <VirtualWire.h>
+
 
 #define FORWARD_ 0
 #define BACKWARD_ 2
 #define LEFT_ -1
 #define RIGHT_ 1
+#define STOP_ 3
 
 
 /* Ultrasonic sensors */      
@@ -29,7 +34,11 @@
 
 
 /* Communication */
-const int receive_pin = 7;
+RH_ASK driver(2000, 14, 15);
+int msg;
+int msgSize = sizeof(msg);
+
+/*const int receive_pin = 7;
 const uint8_t myId = 1; // follower
 
 typedef struct {
@@ -39,7 +48,7 @@ typedef struct {
 
 Message msg;
 byte msgSize = sizeof(msg);
-
+*/
 
 /* Measurements */
 const float safetyDistance = 30; // according with the speed. Expressed in cm
@@ -47,8 +56,8 @@ const float robotWidth = 20;  // expressed in cm
 
 
 /* Movement */
-volatile int currentState = FORWARD_; // initial state = forward
-const int motorSpeed = 200; // from 0 (off) to 255 (max speed)
+volatile int currentState = STOP_; // initial state = stop
+const int motorSpeed = 100; // from 0 (off) to 255 (max speed)
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
@@ -67,15 +76,15 @@ Adafruit_DCMotor *motorRight = AFMS.getMotor(2);
 void setupMotors() {
   // Left wheel
   motorLeft->setSpeed(motorSpeed);
-  motorLeft->run(FORWARD);
+  //motorLeft->run(FORWARD);
   // turn on motor
-  motorLeft->run(RELEASE);
+  //motorLeft->run(RELEASE);
   
   // Right wheel
   motorRight->setSpeed(motorSpeed - 30);
-  motorRight->run(FORWARD);
+  //motorRight->run(FORWARD);
   // turn on motor
-  motorRight->run(RELEASE);
+  //motorRight->run(RELEASE);
 }
 
 void moveForward() {
@@ -107,12 +116,19 @@ void moveRight() {
   // turnOnLed(ledPin_right);
 }
 
+void dontMove() {
+  motorLeft->run(RELEASE);
+  motorRight->run(RELEASE);
+}
+
 
 /*
  * Receiver setup
  */
 void setupReceiver() {
-  // Setup the receiver
+  if (!driver.init())
+         Serial.println("init failed");
+  /*// Setup the receiver
   vw_set_rx_pin(receive_pin);
   vw_setup(2000); 
   vw_rx_start(); 
@@ -120,6 +136,7 @@ void setupReceiver() {
   // Set initial default message
   //msg.id = myId;
  // msg.value = FORWARD_;   // TODO: See if it's better to change it so it doesn't move until it actually receives something
+ */
 }
 
 
@@ -166,50 +183,36 @@ void navigate()
   //interrupts();
   //Serial.print(cm_front);
 
-    /*Serial.println(""); 
-    Serial.print("hhhhhhh Id: ");
-    Serial.print(msg.id);
-    Serial.print("  Value: ");
-    Serial.println(msg.value); 
-    */
+  switch(currentState) {
+    // move forward  
+    case FORWARD_:  
+      Serial.println("avant");
+      moveForward();
+      break;
 
-  // move forward  
-  if(currentState == FORWARD_) {
-    motorLeft->run(FORWARD);
-    motorRight->run(FORWARD);
-   /* if(cm_front < safetyDistance) {
-      Serial.println("arriere  ");
+    // move backward
+    case BACKWARD_:
+      Serial.println("arriere");
       moveBackward();
-    } 
-    else {*/
-      Serial.println("avant  ");
-    /*  moveForward();
-    }*/
-  }
-  // move backward
-  else if(currentState == BACKWARD_) {
-    Serial.println("arriere  ");
-    //moveBackward();
-    motorLeft->run(BACKWARD);
-    motorRight->run(BACKWARD);
-  }
-  // move left
-  else if(currentState == LEFT_) { 
-    Serial.println("gauche  ");
-    //moveLeft();
-    motorLeft->run(BACKWARD);
-    motorRight->run(FORWARD);
-  }
-  // move right
-  else if(currentState == RIGHT_) {
-    Serial.println("droite  ");
-    //moveRight();
-    motorLeft->run(FORWARD);
-    motorRight->run(BACKWARD);
-  }
+      break;
 
-  //motorLeft->run(RELEASE);
-  //motorRight->run(RELEASE);
+    // move left
+    case LEFT_: 
+      Serial.println("gauche"); 
+      moveLeft();
+      break;
+
+    // move right
+    case RIGHT_:
+      Serial.println("droite");
+      moveRight();
+      break;
+
+    case STOP_:
+      Serial.println("stop");
+      dontMove();
+      break;
+  }
 }
 
  
@@ -233,7 +236,7 @@ void setup() {
 void loop()
 {
   // check if a message has been received and stores it in the corresponding structure
-  if (vw_get_message((byte *) &msg, &msgSize)) // Non-blocking
+ /* if (vw_get_message((byte *) &msg, &msgSize)) // Non-blocking
   {
     Serial.println(""); 
     Serial.print("Id: ");
@@ -241,6 +244,18 @@ void loop()
     Serial.print("  Value: ");
     Serial.println(msg.value); 
     currentState = msg.value;
-  }
+  }*/  
+  
+  if (driver.recv((uint8_t *)&msg, (uint8_t *)&msgSize)) // Non-blocking
+    {
+        // Message with a good checksum received, dump it.
+        Serial.print("I received: ");
+        Serial.print(msg);
+        Serial.println("");
+        currentState = msg;
+    }
+    else{
+      Serial.println("Rien!");
+   }
   navigate();
 }
