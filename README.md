@@ -1,6 +1,6 @@
 # Robot avec détection d’obstacles
 
-Ce tutoriel vous guidera pas à pas dans la réalisation d'un robot explorateur detecteur d'obstacles.
+Ce tutoriel vous guidera pas à pas dans la réalisation d'un robot explorateur détecteur d'obstacles.
 Nous allons en réalité utiliser deux robots : 1 robot principal et 1 robot secondaire qui aura pour objectif de suivre le robot leader.
 
 ### Composants et outils
@@ -15,7 +15,7 @@ Pour pouvoir construire le leader, vous aurez besoin de :
 - 1 boîtier pour 5 piles AA (de 1,2 V)
 - des cables jumper
 - 1 mini breadboard
-- un chassis
+- 1 chassis
 
 ![Les differents composant](schema/1.jpg "Les differents composant")
 
@@ -30,12 +30,12 @@ Pour construire le robot follower, vous aurez besoin de:
 - 1 boîtier pour 5 piles AA (de 1,2 V)
 - des cables jumper
 - 1 mini breadboard
-- un chassi
+- 1 chassi
 
 #### Outils
-- Une découpe Laser (utilisé pour faire le chassis des deux robots)
-- Une imprimante 3D (utilisé pour imprimer certain accessoir comme le pare-choc et le boîtier à piles...).
-- Un eventuel kit de soudure si vos fils en ont besoin.
+- Une découpeuse Laser (utilisé pour faire le chassis des deux robots)
+- Une imprimante 3D (utilisé pour imprimer certain accessoirs comme le pare-choc et le boîtier à piles...).
+- Un éventuel kit de soudure si vos fils en ont besoin.
 
 ## Assembler le robot
 Après vous être procuré tout ce materiel, commencez par retourner le chassis, puis fixez les moteurs.
@@ -57,8 +57,8 @@ Placez l'Arduino et la breadboard à l'emplacement désigné par l'image ci-dess
 
 ## Les branchements
 
-Attquons nous aux branchements.
-Commencez par relier les câbles des moteurs aux connecteurs du Shield Motor comme le montre l'image ci-dessous (dans notre exemple nous avons utilisé M2 du Shield Motor pour le moteur à droite et M4 pour le motor à gauche, vous pouvez utiliser le numéro que vous voulez, cependant il faudra le modifier dans le code). Si les roues tournent à l'envers, pas de panique, il suffit juste d'inverser les câbles. Branchez ensuite les six capteurs toujours en suivant l'image en dessous, les GND (ground) entre GND, les VCC (5v) entre VCC...
+Attaquons nous aux branchements.
+Commencez par relier les câbles des moteurs aux connecteurs du Shield Motor comme le montre l'image ci-dessous. Dans notre exemple nous avons utilisé les port M2 du Shield Motor pour la roued droite et M4 pour la roue gauche. Vous pouvez utiliser les numéros que vous voulez, cependant il faudra les modifier dans le code. Si les roues tournent à l'envers, pas de panique, il suffit juste d'inverser les câbles. Branchez ensuite les six capteurs toujours en suivant l'image en dessous, les GND (ground) entre GND, les VCC (5v) entre VCC, etc...
 
 ![Circuit du robot principal](schema/scrappy.png "Circuit montage du Robot Leader")
 <p align="center">
@@ -78,10 +78,10 @@ L'image qui suit montre l'Emetteur Radio Frequency 433Mhz. Son pin DATA est bran
 </p>
 
 ## L'alimentation
-Pour alimenter le Robot plusieurs solutions sont possibles : le port USB, une prise secteur (avec le bon chargeur), ou 5 piles AA.
+Pour alimenter le robot plusieurs solutions sont possibles : le port USB, une prise secteur (avec le bon chargeur), ou 5 piles AA.
 Si vous optez pour une alimention via secteur ou USB vous devrez les connecter à l'Arduino.
 
-Si vous optez pour une alimentation avec les piles alors le branchement se fait sur le Shield Motor (on peut aussi le relier à l'Arduino) comme on peut le voir sur l'image du circuit (Les branchements) ci-dessus
+Si vous optez pour une alimentation avec les piles alors le branchement se fait sur le Shield Motor (on peut aussi le relier à l'Arduino) comme on peut le voir sur l'image du circuit (les branchements) ci-dessus.
 ![Robot avec Boîte à piles](schema/19.jpg "Robot avec Boîte à piles")
 
 ## Installer le programme
