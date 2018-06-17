@@ -60,9 +60,8 @@ Placez l'Arduino et la breadboard à l'emplacement désigné par l'image ci-dess
 Attquons nous aux branchements.
 Commencez par relier les câbles des moteurs aux connecteurs du Shield Motor comme le montre l'image ci-dessous (dans notre exemple nous avons utilisé M2 du Shield Motor pour le moteur à droite et M4 pour le motor à gauche, vous pouvez utiliser le numéro que vous voulez, cependant il faudra le modifier dans le code). Si les roues tournent à l'envers, pas de panique, il suffit juste d'inverser les câbles. Branchez ensuite les six capteurs toujours en suivant l'image en dessous, les GND (ground) entre GND, les VCC (5v) entre VCC...
 
-<p align="center">
 ![Circuit du robot principal](schema/scrappy.png "Circuit montage du Robot Leader")
-
+<p align="center">
 <img src="schema/8.jpg" alt="branchement 1" width="33%"/>
 <img src="schema/9.jpg" alt="branchement 2" width="33%"/>
 <img src="schema/15.jpg" alt="branchement 3" width="32%"/>
