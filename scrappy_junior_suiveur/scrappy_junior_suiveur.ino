@@ -11,26 +11,24 @@
       
 *****************************************************************************/
 
+#include <Adafruit_MotorShield.h>
 #include <RH_ASK.h>
 #include <SPI.h>
-
-//#include <Wire.h>
-#include <Adafruit_MotorShield.h>
-//#include <Adafruit_PWMServoDriver.h>
-//#include <TimerOne.h>
-//#include <VirtualWire.h>
-
 
 #define FORWARD_ 0
 #define BACKWARD_ 2
 #define LEFT_ -1
 #define RIGHT_ 1
 #define STOP_ 3
+#define MAX_SPEED 255
 
 
 /* Ultrasonic sensors */      
-//const uint8_t echoPin = 2;  // echo signal (receives)
-//const uint8_t trigPin = 3;  // trigger signal (sends)
+const uint8_t echoPin_front_right = 2;  // echo signal (receives)
+const uint8_t echoPin_front_left = 3; 
+
+const uint8_t trigPin_front_right = 4;  // trigger signal (sends)
+const uint8_t trigPin_front_left = 5; 
 
 
 /* Communication */
@@ -38,26 +36,17 @@ RH_ASK driver(2000, 14, 15);
 int msg;
 int msgSize = sizeof(msg);
 
-/*const int receive_pin = 7;
-const uint8_t myId = 1; // follower
-
-typedef struct {
-  int id;
-  int value;
-} Message;
-
-Message msg;
-byte msgSize = sizeof(msg);
-*/
 
 /* Measurements */
-const float safetyDistance = 30; // according with the speed. Expressed in cm
+const float safetyDistance = 20; // according with the speed. Expressed in cm
 const float robotWidth = 20;  // expressed in cm
+const float margin = safetyDistance / 2; // margin of movement regarding the Master robot. The follower should always be between the marging and the safetyDistance
 
 
 /* Movement */
+boolean isDistanceSet = false;
 volatile int currentState = STOP_; // initial state = stop
-const int motorSpeed = 100; // from 0 (off) to 255 (max speed)
+const int motorSpeed = 60; // from 0 (off) to 255 (max speed)
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
@@ -71,20 +60,10 @@ Adafruit_DCMotor *motorRight = AFMS.getMotor(2);
 
 /*
  * Motors setup and movement
- */ 
- // TODO: Don't start the wheels by default
-void setupMotors() {
-  // Left wheel
-  motorLeft->setSpeed(motorSpeed);
-  //motorLeft->run(FORWARD);
-  // turn on motor
-  //motorLeft->run(RELEASE);
-  
-  // Right wheel
-  motorRight->setSpeed(motorSpeed - 30);
-  //motorRight->run(FORWARD);
-  // turn on motor
-  //motorRight->run(RELEASE);
+ */  
+void setSpeed_(const int mSpeed) {
+  motorLeft->setSpeed(mSpeed);
+  motorRight->setSpeed(mSpeed);
 }
 
 void moveForward() {
@@ -128,15 +107,6 @@ void dontMove() {
 void setupReceiver() {
   if (!driver.init())
          Serial.println("init failed");
-  /*// Setup the receiver
-  vw_set_rx_pin(receive_pin);
-  vw_setup(2000); 
-  vw_rx_start(); 
-
-  // Set initial default message
-  //msg.id = myId;
- // msg.value = FORWARD_;   // TODO: See if it's better to change it so it doesn't move until it actually receives something
- */
 }
 
 
@@ -177,11 +147,34 @@ float calculDistance(uint8_t trigPin, uint8_t echoPin){
  */
 void navigate() 
 {
-  //float cm_front;  // distance of Master
-  //noInterrupts();
-  //cm_front = calculDistance(trigPin, echoPin);
-  //interrupts();
-  //Serial.print(cm_front);
+  float cm_front_left;  // distance to the Master
+  float cm_front_right;  
+  float max_distance = safetyDistance + margin;
+  float ideal_distance = safetyDistance + margin/2;
+  
+  cm_front_left = calculDistance(trigPin_front_left, echoPin_front_left);
+  cm_front_right = calculDistance(trigPin_front_right, echoPin_front_right);
+  
+  Serial.print(cm_front_left);
+  Serial.print(" - ");
+  Serial.print(cm_front_right);
+  Serial.println("");
+
+  if(cm_front_left < safetyDistance && cm_front_right < safetyDistance) {
+    currentState = BACKWARD_;
+    isDistanceSet = false;    
+  } 
+  else if (!isDistanceSet) {
+    if(cm_front_left < ideal_distance && cm_front_right < ideal_distance) {
+      currentState = BACKWARD_;
+    } 
+    else if ((cm_front_left > max_distance && cm_front_right > max_distance) ||
+            ((ideal_distance - 2 < cm_front_left && cm_front_left < ideal_distance + 2) && 
+            (ideal_distance - 2 < cm_front_right && cm_front_right < ideal_distance + 2))) {
+      currentState = STOP_;
+      isDistanceSet = true;  
+    }
+  }  
 
   switch(currentState) {
     // move forward  
@@ -226,7 +219,7 @@ void setup() {
   AFMS.begin();  // create with the default frequency 1.6KHz
 
   setupReceiver();
-  setupMotors();
+  setSpeed_(motorSpeed);
 }
 
 
@@ -234,21 +227,9 @@ void setup() {
  * It's the the function that will be called at each tick time. It executes navigate and sends the message
  */
 void loop()
-{
-  // check if a message has been received and stores it in the corresponding structure
- /* if (vw_get_message((byte *) &msg, &msgSize)) // Non-blocking
-  {
-    Serial.println(""); 
-    Serial.print("Id: ");
-    Serial.print(msg.id);
-    Serial.print("  Value: ");
-    Serial.println(msg.value); 
-    currentState = msg.value;
-  }*/  
-  
+{  
   if (driver.recv((uint8_t *)&msg, (uint8_t *)&msgSize)) // Non-blocking
     {
-        // Message with a good checksum received, dump it.
         Serial.print("I received: ");
         Serial.print(msg);
         Serial.println("");

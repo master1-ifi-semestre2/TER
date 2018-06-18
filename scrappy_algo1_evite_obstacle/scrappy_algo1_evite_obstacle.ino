@@ -11,11 +11,8 @@
    Permissions: MIT licence
       
 *****************************************************************************/
-#include <Wire.h>
+
 #include <Adafruit_MotorShield.h>
-#include <Adafruit_PWMServoDriver.h>
-#include <TimerOne.h>
-//#include <VirtualWire.h>
 #include <RH_ASK.h>
 #include <SPI.h>
 
@@ -41,11 +38,6 @@ const uint8_t trigPin_left = 12;
 const uint8_t trigPin_LEFT = 13;
 
 
-/* Measurements */
-const float safetyDistance = 20; // according with the speed. Expressed in cm
-const float robotWidth = 20;  // expressed in cm
-
-
 /* LEDs
  * long side : pin
  * short side : ground
@@ -56,9 +48,14 @@ const uint8_t ledPin_back = 16;
 const uint8_t ledPin_right = 17;
 
 
+/* Measurements */
+const float safetyDistance = 20; // according with the speed. Expressed in cm
+const float robotWidth = 20;  // expressed in cm
+
+
 /* Movement */
 volatile int currentState = FORWARD_; // initial state = forward
-const int motorSpeed = 70; // from 0 (off) to 255 (max speed)
+const int motorSpeed = 100; // from 0 (off) to 255 (max speed)
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
@@ -71,19 +68,8 @@ Adafruit_DCMotor *motorRight = AFMS.getMotor(2);
 
 
 /* Communication */
-RH_ASK driver(2000, 15, 14);
+RH_ASK transmitter(2000, 15, 14);  // transmitter pin 14, receiver pin 15 (but receiver is not used)
 int msg = currentState;
-
-/*const int transmit_pin = 14;    
-const uint8_t myId = 0; // boss
-
-typedef struct {
-  int id;
-  int value;
-} Message;
-
-Message msg;
-*/
 
 
 /*
@@ -93,13 +79,11 @@ void setupMotors() {
   // Left wheel
   motorLeft->setSpeed(motorSpeed);
   motorLeft->run(FORWARD);
-  // turn on motor
   motorLeft->run(RELEASE);
   
   // Right wheel
-  motorRight->setSpeed(motorSpeed);
+  motorRight->setSpeed(motorSpeed + 10);
   motorRight->run(FORWARD);
-  // turn on motor
   motorRight->run(RELEASE);
 }
 
@@ -144,29 +128,15 @@ void moveRight() {
  * Transmitter setup and send message
  */
 void setupTransmitter() {
-  if (!driver.init())
-         Serial.println("init failed");
-  /*
-  // Setup the transmitter
-  vw_set_tx_pin(transmit_pin);
-  vw_set_ptt_inverted(true);
-  vw_setup(2000);
-
-  // Set initial message
-  msg.id = myId;
-  msg.value = FORWARD_;*/
+  if (!transmitter.init())
+         Serial.println("Init failed");
 }
 
-/* Sends message on how to move */
+/* Sends the movement to be followed (the int indicating the direction) */
 void sendMessage() {
-  driver.send((uint8_t *) &msg, sizeof(msg));
-  driver.waitPacketSent();
+  transmitter.send((uint8_t *) &msg, sizeof(msg));
+  transmitter.waitPacketSent();
   delay(20);
-  /*
-  vw_send((byte*) &msg, sizeof(msg));
-  vw_wait_tx(); // we wait until the message is sent
-  //Serial.println("Message send !");
-  delay(10);*/
 }
 
 
@@ -228,21 +198,25 @@ float calculDistance(uint8_t trigPin, uint8_t echoPin) {
  * Determines where to move to avoid obstacles
  */
 int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_right, float cm_LEFT, float cm_RIGHT) {
-      
-  Serial.print(cm_left);
-  Serial.print("  -  ");
-  Serial.print(cm_front_left);
-  Serial.print("  -  ");
-  Serial.print(cm_front_right);
-  Serial.print("  -  ");
-  Serial.println(cm_right);
 
-   // if there is enough space everywhere then go forward
+  Serial.print(cm_LEFT);
+  Serial.print(" - ");
+  Serial.print(cm_left);
+  Serial.print(" - ");
+  Serial.print(cm_front_left);
+  Serial.print(" - ");
+  Serial.print(cm_front_right);
+  Serial.print(" - ");
+  Serial.println(cm_right);
+  Serial.print(" - ");
+  Serial.println(cm_RIGHT);
+
+   // if there is enough space everywhere in front of him then go forward
    if ((cm_front_right > robotWidth + safetyDistance) && (cm_front_left > robotWidth + safetyDistance) && cm_left > safetyDistance && cm_right > safetyDistance) {    
          return FORWARD_;
    }
    // if there is not enough space in front of him, but there's enough to turn then turn right or left (where there is more space)
-   else if (cm_front_left > robotWidth || cm_front_right > robotWidth) {
+   else if (cm_front_left > safetyDistance || cm_front_right > safetyDistance) {
         if (cm_left > cm_right || cm_LEFT > cm_RIGHT) {
              return LEFT_;
         }

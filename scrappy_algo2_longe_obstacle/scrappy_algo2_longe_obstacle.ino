@@ -52,9 +52,9 @@ Message msg;
 
 
 /* Measurements */
-const float safetyDistance = 30; // according with the speed, expressed in cm
-const float robotWidth = 20; // and the height is 12 cm
-const float marge = safetyDistance / 3;
+const float safetyDistance = 30; // according with the speed. Expressed in cm
+const float robotWidth = 20; // expressed in cm
+const float marge = safetyDistance / 3; // margin of movement. It should move between the marging and the safetyDistance
 
 
 /* LEDs
