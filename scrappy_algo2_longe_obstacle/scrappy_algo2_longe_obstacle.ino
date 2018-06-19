@@ -11,11 +11,7 @@
       
 *****************************************************************************/
 
-#include <Wire.h>
 #include <Adafruit_MotorShield.h>
-#include <Adafruit_PWMServoDriver.h>
-#include <TimerOne.h>
-#include <VirtualWire.h>
 
 #define FORWARD_ 0
 #define BACKWARD_ 2
@@ -39,18 +35,6 @@ const uint8_t trigPin_left = 12;
 const uint8_t trigPin_LEFT = 13;
 
 
-/* Communication */
-const int transmit_pin = 14;    
-const uint8_t myId = 0; // boss
-
-typedef struct {
-  int id;
-  int value;
-} Message;
-
-Message msg;
-
-
 /* Measurements */
 const float safetyDistance = 30; // according with the speed. Expressed in cm
 const float robotWidth = 20; // expressed in cm
@@ -67,10 +51,6 @@ const uint8_t ledPin_back = 16;
 const uint8_t ledPin_right = 17;
 
 
-/* Movement */
-const int motorSpeed = 200; // from 0 (off) to 255 (max speed)
-
-
 /*
  * Determines where to move
  */
@@ -79,6 +59,10 @@ boolean searchingObject = false;
 int tick = 0;
 int randomDir = FORWARD_;
 boolean stop_ = false;
+
+
+/* Movement */
+const int motorSpeed = 200; // from 0 (off) to 255 (max speed)
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
@@ -97,20 +81,17 @@ void setupMotors() {
   // Left wheel
   motorLeft->setSpeed(motorSpeed);
   motorLeft->run(FORWARD);
-  // turn on motor
   motorLeft->run(RELEASE);
   
   // Right wheel
   motorRight->setSpeed(motorSpeed);
   motorRight->run(FORWARD);
-  // turn on motor
   motorRight->run(RELEASE);
 }
 
 void moveForward() {
   motorRight->run(FORWARD);
   motorLeft->run(FORWARD);
-  msg.value = FORWARD_; 
 }
 
 void moveBackward() {
@@ -119,8 +100,6 @@ void moveBackward() {
 
   // turn on back led
   // turnOnLed(ledPin_back);
-
-  msg.value = BACKWARD_;
 }
 
 void moveLeft() {
@@ -129,8 +108,6 @@ void moveLeft() {
 
   // turn on left led
   // turnOnLed(ledPin_left);
-
-  msg.value = LEFT_;
 }
 
 void moveRight() {
@@ -139,8 +116,6 @@ void moveRight() {
 
   // turn on right led
   // turnOnLed(ledPin_right);
-
-  msg.value = RIGHT_;
 }
 
 void dontMove() {
@@ -148,27 +123,6 @@ void dontMove() {
   motorRight->run(RELEASE);
 }
 
-/*
- * Transmitter setup and send message
- */
-void setupTransmitter() {
-  // Setup the transmitter
-  vw_set_tx_pin(transmit_pin);
-  vw_set_ptt_inverted(true);
-  vw_setup(2000);
-
-  // Set initial message
-  msg.id = myId;
-  msg.value = FORWARD_;
-}
-
-/* Sends message on how to move */
-void sendMessage() {
-  vw_send((byte*) &msg, sizeof(msg));
-  vw_wait_tx(); // we wait until the message is sent
-  //Serial.println("Message send !");
-  delay(10);
-}
 
 
 /*
@@ -235,6 +189,8 @@ void initValue() {
  * Determines where to move
  */
 int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_right, float cm_right, float cm_RIGHT) {  
+  
+  /* Print distance of each sensor - for debugging
   Serial.print("object detected (-1 == left) ");
   Serial.println(objectDetected);
   Serial.print(cm_LEFT);
@@ -248,15 +204,14 @@ int explore(float cm_LEFT, float cm_left, float cm_front_left, float cm_front_ri
   Serial.print(cm_right);
   Serial.print(" - ");
   Serial.println(cm_RIGHT);
+  */
    
- if (tick > 203){
+ if (tick > 203) {
   initValue();
   stop_ = false;
  }
  else if (tick == 200) {
-      Serial.println("random");
       randomDir = -objectDetected;
-      //initValue();
       stop_ = true;
       return randomDir;
   }
@@ -393,29 +348,25 @@ void navigate(){
   switch(resultatExplore) {
     // move forward  
     case FORWARD_:  
-      Serial.print("avant  ");
-      Serial.println(tick);
+      //Serial.print("avant  ");
       moveForward();
       break;
 
     // move backward
     case BACKWARD_:
-      Serial.print("arriere  ");
-      Serial.println(tick);
+      //Serial.print("arriere  ");
       moveBackward();
       break;
 
     // move left
     case LEFT_: 
-      Serial.print("gauche  ");
-      Serial.println(tick); 
+      //Serial.print("gauche  ");
       moveLeft();
       break;
 
     // move right
     case RIGHT_:
-      Serial.print("droite  ");
-      Serial.println(tick);
+      //Serial.print("droite  ");
       moveRight();
       break;
   }
@@ -430,17 +381,15 @@ void setup() {
   Serial.begin(9600);
   AFMS.begin();  // create with the default frequency 1.6KHz
   
-  setupTransmitter();
   setupMotors();
   //setupLeds();
 }
 
 
 /*
- * It's the the function that will be called at each tick time. It executes navigate and sends the message
+ * It's the function that will be called at each tick time
  */
 void loop()
 {
   navigate();
-  sendMessage();
 }

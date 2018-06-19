@@ -1,4 +1,3 @@
-
 /****************************************************************************
    Sonar Robot
 
@@ -55,7 +54,7 @@ const float robotWidth = 20;  // expressed in cm
 
 /* Movement */
 volatile int currentState = FORWARD_; // initial state = forward
-const int motorSpeed = 100; // from 0 (off) to 255 (max speed)
+const int motorSpeed = 200; // from 0 (off) to 255 (max speed)
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
@@ -199,6 +198,7 @@ float calculDistance(uint8_t trigPin, uint8_t echoPin) {
  */
 int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_right, float cm_LEFT, float cm_RIGHT) {
 
+  /* Print distance of each sensor - for debugging
   Serial.print(cm_LEFT);
   Serial.print(" - ");
   Serial.print(cm_left);
@@ -210,6 +210,7 @@ int explore(float cm_front_left, float cm_front_right, float cm_left, float cm_r
   Serial.println(cm_right);
   Serial.print(" - ");
   Serial.println(cm_RIGHT);
+  */
 
    // if there is enough space everywhere in front of him then go forward
    if ((cm_front_right > robotWidth + safetyDistance) && (cm_front_left > robotWidth + safetyDistance) && cm_left > safetyDistance && cm_right > safetyDistance) {    
@@ -273,25 +274,25 @@ void navigate()
   switch(resultatExplore) {
     // move forward  
     case FORWARD_:  
-      Serial.println("avant");
+      //Serial.println("avant");
       moveForward();
       break;
 
     // move backward
     case BACKWARD_:
-      Serial.println("arriere");
+      //Serial.println("arriere");
       moveBackward();
       break;
 
     // move left
     case LEFT_: 
-      Serial.println("gauche"); 
+      //Serial.println("gauche"); 
       moveLeft();
       break;
 
     // move right
     case RIGHT_:
-      Serial.println("droite");
+      //Serial.println("droite");
       moveRight();
       break;
   }
@@ -313,7 +314,7 @@ void setup() {
 
 
 /*
- * It's the the function that will be called at each tick time. It executes navigate and sends the message
+ * It's the function that will be called at each tick time. It executes navigate and sends the message
  */
 void loop()
 {

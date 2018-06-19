@@ -20,8 +20,6 @@
 #define LEFT_ -1
 #define RIGHT_ 1
 #define STOP_ 3
-#define MAX_SPEED 255
-
 
 /* Ultrasonic sensors */      
 const uint8_t echoPin_front_right = 2;  // echo signal (receives)
@@ -154,20 +152,27 @@ void navigate()
   
   cm_front_left = calculDistance(trigPin_front_left, echoPin_front_left);
   cm_front_right = calculDistance(trigPin_front_right, echoPin_front_right);
-  
+
+  /* Print distance of each sensor - for debugging
   Serial.print(cm_front_left);
   Serial.print(" - ");
-  Serial.print(cm_front_right);
-  Serial.println("");
+  Serial.println(cm_front_right);
+  */
 
+  // Ifs for restoring the safety distance
+  
+  // if there's no enough space in front of him then go backwards - safetyDistance
   if(cm_front_left < safetyDistance && cm_front_right < safetyDistance) {
     currentState = BACKWARD_;
     isDistanceSet = false;    
   } 
   else if (!isDistanceSet) {
+    // if there's no enough space in front of him then go backwards - ideal_distance
     if(cm_front_left < ideal_distance && cm_front_right < ideal_distance) {
       currentState = BACKWARD_;
     } 
+
+    // if he is between ideal distance - 2 and ideal distance + 2 or he is further away than max distance then stop
     else if ((cm_front_left > max_distance && cm_front_right > max_distance) ||
             ((ideal_distance - 2 < cm_front_left && cm_front_left < ideal_distance + 2) && 
             (ideal_distance - 2 < cm_front_right && cm_front_right < ideal_distance + 2))) {
@@ -179,30 +184,30 @@ void navigate()
   switch(currentState) {
     // move forward  
     case FORWARD_:  
-      Serial.println("avant");
+      //Serial.println("avant");
       moveForward();
       break;
 
     // move backward
     case BACKWARD_:
-      Serial.println("arriere");
+      //Serial.println("arriere");
       moveBackward();
       break;
 
     // move left
     case LEFT_: 
-      Serial.println("gauche"); 
+      //Serial.println("gauche"); 
       moveLeft();
       break;
 
     // move right
     case RIGHT_:
-      Serial.println("droite");
+      //Serial.println("droite");
       moveRight();
       break;
 
     case STOP_:
-      Serial.println("stop");
+      //Serial.println("stop");
       dontMove();
       break;
   }
@@ -229,14 +234,11 @@ void setup() {
 void loop()
 {  
   if (driver.recv((uint8_t *)&msg, (uint8_t *)&msgSize)) // Non-blocking
-    {
-        Serial.print("I received: ");
-        Serial.print(msg);
-        Serial.println("");
-        currentState = msg;
-    }
-    else{
-      Serial.println("Rien!");
-   }
+  {
+    currentState = msg;
+  }
+  else{
+    //Serial.println("Rien!");
+  }
   navigate();
 }
